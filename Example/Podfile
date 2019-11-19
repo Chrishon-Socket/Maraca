@@ -1,0 +1,11 @@
+use_frameworks!
+
+target 'Maraca_Example' do
+  pod 'Maraca', :path => '../'
+
+  target 'Maraca_Tests' do
+    inherit! :search_paths
+
+    
+  end
+end
