@@ -1,0 +1,6 @@
+framework module Maraca {
+  umbrella header "Maraca-umbrella.h"
+
+  export *
+  module * { export * }
+}

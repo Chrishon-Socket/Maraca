@@ -1,0 +1,24 @@
+PODS:
+  - Maraca (0.1.0):
+    - SKTCapture (~> 1.1)
+  - SKTCapture (1.1.351)
+
+DEPENDENCIES:
+  - Maraca (from `../`)
+  - SKTCapture (~> 1.1)
+
+SPEC REPOS:
+  trunk:
+    - SKTCapture
+
+EXTERNAL SOURCES:
+  Maraca:
+    :path: "../"
+
+SPEC CHECKSUMS:
+  Maraca: 1e1cbb07812efde94820ed25d129cab026284e2e
+  SKTCapture: 251eab8b96eb6672d73b611301e89ad238139ebc
+
+PODFILE CHECKSUM: 0fa6ab981720fb41c17cb9f33ef40fad984b5ff2
+
+COCOAPODS: 1.8.4

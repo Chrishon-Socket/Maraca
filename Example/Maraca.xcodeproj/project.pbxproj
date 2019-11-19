@@ -28,9 +28,9 @@
 /* End PBXContainerItemProxy section */
 
 /* Begin PBXFileReference section */
-		01D9B65D92E19CAEFC66CE9E /* README.md */ = {isa = PBXFileReference; includeInIndex = 1; name = README.md; path = ../README.md; sourceTree = "<group>"; };
+		01D9B65D92E19CAEFC66CE9E /* README.md */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = net.daringfireball.markdown; name = README.md; path = ../README.md; sourceTree = "<group>"; };
 		1EEC7438EE1397D498E9917B /* Pods_Maraca_Example.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = Pods_Maraca_Example.framework; sourceTree = BUILT_PRODUCTS_DIR; };
-		4B3A0884F4F2A723F7996679 /* LICENSE */ = {isa = PBXFileReference; includeInIndex = 1; name = LICENSE; path = ../LICENSE; sourceTree = "<group>"; };
+		4B3A0884F4F2A723F7996679 /* LICENSE */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text; name = LICENSE; path = ../LICENSE; sourceTree = "<group>"; };
 		5C10146A866F873CD6AFE8E6 /* Pods-Maraca_Example.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-Maraca_Example.debug.xcconfig"; path = "Target Support Files/Pods-Maraca_Example/Pods-Maraca_Example.debug.xcconfig"; sourceTree = "<group>"; };
 		607FACD01AFB9204008FA782 /* Maraca_Example.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Maraca_Example.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		607FACD41AFB9204008FA782 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
@@ -45,7 +45,7 @@
 		81DD0982B92064FB997679C5 /* Pods-Maraca_Tests.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-Maraca_Tests.release.xcconfig"; path = "Target Support Files/Pods-Maraca_Tests/Pods-Maraca_Tests.release.xcconfig"; sourceTree = "<group>"; };
 		9D9E46E0C65F0E365C4D2965 /* Pods-Maraca_Example.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-Maraca_Example.release.xcconfig"; path = "Target Support Files/Pods-Maraca_Example/Pods-Maraca_Example.release.xcconfig"; sourceTree = "<group>"; };
 		CB46DE2A659668C8D0D73B44 /* Pods_Maraca_Tests.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = Pods_Maraca_Tests.framework; sourceTree = BUILT_PRODUCTS_DIR; };
-		DDA783CC4C3190AFEF0CCCAE /* Maraca.podspec */ = {isa = PBXFileReference; includeInIndex = 1; name = Maraca.podspec; path = ../Maraca.podspec; sourceTree = "<group>"; };
+		DDA783CC4C3190AFEF0CCCAE /* Maraca.podspec */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text; name = Maraca.podspec; path = ../Maraca.podspec; sourceTree = "<group>"; xcLanguageSpecificationIdentifier = xcode.lang.ruby; };
 		F866945E5E5CFB43E4A11118 /* Pods-Maraca_Tests.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-Maraca_Tests.debug.xcconfig"; path = "Target Support Files/Pods-Maraca_Tests/Pods-Maraca_Tests.debug.xcconfig"; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
@@ -86,7 +86,6 @@
 				F866945E5E5CFB43E4A11118 /* Pods-Maraca_Tests.debug.xcconfig */,
 				81DD0982B92064FB997679C5 /* Pods-Maraca_Tests.release.xcconfig */,
 			);
-			name = Pods;
 			path = Pods;
 			sourceTree = "<group>";
 		};
@@ -227,6 +226,7 @@
 			developmentRegion = English;
 			hasScannedForEncodings = 0;
 			knownRegions = (
+				English,
 				en,
 				Base,
 			);
@@ -314,10 +314,12 @@
 			inputPaths = (
 				"${PODS_ROOT}/Target Support Files/Pods-Maraca_Example/Pods-Maraca_Example-frameworks.sh",
 				"${BUILT_PRODUCTS_DIR}/Maraca/Maraca.framework",
+				"${BUILT_PRODUCTS_DIR}/SKTCapture/SKTCapture.framework",
 			);
 			name = "[CP] Embed Pods Frameworks";
 			outputPaths = (
 				"${TARGET_BUILD_DIR}/${FRAMEWORKS_FOLDER_PATH}/Maraca.framework",
+				"${TARGET_BUILD_DIR}/${FRAMEWORKS_FOLDER_PATH}/SKTCapture.framework",
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/sh;
