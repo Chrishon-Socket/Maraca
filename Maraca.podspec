@@ -23,7 +23,7 @@ Use Socket Mobile barcode scanners and RFID readers and writers  with your web a
 WKWebView with SKTCapture
                        DESC
 
-  s.homepage         = 'https://github.com/SocketMobile/Maraca'
+  s.homepage         = 'https://github.com/Chrishon-Socket/Maraca'
   # s.screenshots     = 'www.example.com/screenshots_1', 'www.example.com/screenshots_2'
   s.license          = { :type => 'MIT', :file => 'LICENSE' }
   s.author           = { "Socket" => "developers@socketmobile.com" }
