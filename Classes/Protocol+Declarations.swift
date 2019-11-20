@@ -278,7 +278,7 @@ extension SKTCaptureProperty {
             guard let arrayOfBytes = valueFromJson as? [UInt8] else {
                 throw MaracaError.malformedJson("The value from the JSON was expected to be of type [UInt8], instead it is: \(valueFromJson)")
             }
-            let data = Data(bytes: arrayOfBytes)
+            let data = Data(arrayOfBytes)
             self.arrayValue = data
         case .byte:
             // TODO

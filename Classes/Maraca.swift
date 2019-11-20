@@ -585,7 +585,8 @@ extension Maraca: CaptureHelperAllDelegate {
         
         guard
             let deviceName = device.deviceInfo.name,
-            let deviceGuid = device.deviceInfo.guid else { return }
+            let deviceGuid = device.deviceInfo.guid,
+            let clientHandle = activeClient.handle else { return }
         
         // Send the deviceArrival to the web app along with its guid
         // The web app may ignore this, but when it is ready to open
@@ -595,7 +596,7 @@ extension Maraca: CaptureHelperAllDelegate {
         let jsonRpc: [String: Any] = [
             MaracaConstants.Keys.jsonrpc.rawValue : Maraca.jsonRpcVersion ?? "2.0",
             MaracaConstants.Keys.result.rawValue : [
-                MaracaConstants.Keys.handle.rawValue : activeClient.handle,
+                MaracaConstants.Keys.handle.rawValue : clientHandle,
                 MaracaConstants.Keys.event.rawValue : [
                     MaracaConstants.Keys.id.rawValue : 1,
                     MaracaConstants.Keys.type.rawValue : 6,
@@ -627,12 +628,15 @@ extension Maraca: CaptureHelperAllDelegate {
             return
         }
         
-        guard let deviceName = device.deviceInfo.name, let deviceGuid = device.deviceInfo.guid else { return }
+        guard
+            let deviceName = device.deviceInfo.name,
+            let deviceGuid = device.deviceInfo.guid,
+            let clientHandle = activeClient.handle else { return }
         
         let jsonRpc: [String: Any] = [
             MaracaConstants.Keys.jsonrpc.rawValue : Maraca.jsonRpcVersion ?? "2.0",
             MaracaConstants.Keys.result.rawValue : [
-                MaracaConstants.Keys.handle.rawValue : activeClient.handle,
+                MaracaConstants.Keys.handle.rawValue : clientHandle,
                 MaracaConstants.Keys.event.rawValue : [
                     MaracaConstants.Keys.id.rawValue : 2,
                     MaracaConstants.Keys.type.rawValue : 6,
@@ -650,12 +654,15 @@ extension Maraca: CaptureHelperAllDelegate {
     
     public func didChangePowerState(_ powerState: SKTCapturePowerState, forDevice device: CaptureHelperDevice) {
         
-        guard let activeClient = activeClient else { return }
+        guard
+            let activeClient = activeClient,
+            let clientHandle = activeClient.handle
+        else { return }
         
         let jsonRpc: [String: Any] = [
             MaracaConstants.Keys.jsonrpc.rawValue : Maraca.jsonRpcVersion ?? "2.0",
             MaracaConstants.Keys.result.rawValue : [
-                MaracaConstants.Keys.handle.rawValue : activeClient.handle,
+                MaracaConstants.Keys.handle.rawValue : clientHandle,
                 MaracaConstants.Keys.event.rawValue : [
                     MaracaConstants.Keys.id.rawValue : 6,
                     MaracaConstants.Keys.type.rawValue : 5,
@@ -669,12 +676,15 @@ extension Maraca: CaptureHelperAllDelegate {
     
     public func didChangeBatteryLevel(_ batteryLevel: Int, forDevice device: CaptureHelperDevice) {
         
-        guard let activeClient = activeClient else { return }
+        guard
+            let activeClient = activeClient,
+            let clientHandle = activeClient.handle
+        else { return }
         
         let jsonRpc: [String: Any] = [
             MaracaConstants.Keys.jsonrpc.rawValue : Maraca.jsonRpcVersion ?? "2.0",
             MaracaConstants.Keys.result.rawValue : [
-                MaracaConstants.Keys.handle.rawValue : activeClient.handle,
+                MaracaConstants.Keys.handle.rawValue : clientHandle,
                 MaracaConstants.Keys.event.rawValue : [
                     MaracaConstants.Keys.id.rawValue : 8,
                     MaracaConstants.Keys.type.rawValue : 3,
@@ -689,7 +699,10 @@ extension Maraca: CaptureHelperAllDelegate {
     
     public func didReceiveDecodedData(_ decodedData: SKTCaptureDecodedData?, fromDevice device: CaptureHelperDevice, withResult result: SKTResult) {
         
-        guard let activeClient = activeClient else { return }
+        guard
+            let activeClient = activeClient,
+            let clientHandle = activeClient.handle
+        else { return }
         
         guard result == SKTResult.E_NOERROR else {
             
@@ -724,7 +737,7 @@ extension Maraca: CaptureHelperAllDelegate {
         let jsonRpc: [String: Any] = [
             MaracaConstants.Keys.jsonrpc.rawValue : Maraca.jsonRpcVersion ?? "2.0",
             MaracaConstants.Keys.result.rawValue : [
-                MaracaConstants.Keys.handle.rawValue : activeClient.handle,
+                MaracaConstants.Keys.handle.rawValue : clientHandle,
                 MaracaConstants.Keys.event.rawValue : [
                     MaracaConstants.Keys.id.rawValue : 5,
                     MaracaConstants.Keys.type.rawValue : 5,
@@ -742,12 +755,15 @@ extension Maraca: CaptureHelperAllDelegate {
     
     public func didChangeButtonsState(_ buttonsState: SKTCaptureButtonsState, forDevice device: CaptureHelperDevice) {
         
-        guard let activeClient = activeClient else { return }
+        guard
+            let activeClient = activeClient,
+            let clientHandle = activeClient.handle
+        else { return }
         
         let jsonRpc: [String: Any] = [
             MaracaConstants.Keys.jsonrpc.rawValue : Maraca.jsonRpcVersion ?? "2.0",
             MaracaConstants.Keys.result.rawValue : [
-                MaracaConstants.Keys.handle.rawValue : activeClient.handle,
+                MaracaConstants.Keys.handle.rawValue : clientHandle,
                 MaracaConstants.Keys.event.rawValue : [
                     MaracaConstants.Keys.id.rawValue : 7,
                     MaracaConstants.Keys.type.rawValue : 1,

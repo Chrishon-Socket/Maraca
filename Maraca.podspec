@@ -33,7 +33,7 @@ WKWebView with SKTCapture
   s.ios.deployment_target = '9.3'
   s.platform = :ios, "9.3"
 
-  s.source_files = 'Maraca/Classes/**/*'
+  s.source_files = 'Classes/*.{h,m,swift}'
   
   # s.resource_bundles = {
   #   'Maraca' => ['Maraca/Assets/*.png']
