@@ -23,6 +23,7 @@
 		523CCAC9238472300088B24F /* MaracaConstants.swift in Sources */ = {isa = PBXBuildFile; fileRef = 523CCAC3238472300088B24F /* MaracaConstants.swift */; };
 		523CCACA238472300088B24F /* Client.swift in Sources */ = {isa = PBXBuildFile; fileRef = 523CCAC4238472300088B24F /* Client.swift */; };
 		523CCACB238472300088B24F /* Protocol+Declarations.swift in Sources */ = {isa = PBXBuildFile; fileRef = 523CCAC5238472300088B24F /* Protocol+Declarations.swift */; };
+		523CCB092385B13B0088B24F /* LeakAvoider.swift in Sources */ = {isa = PBXBuildFile; fileRef = 523CCB082385B13B0088B24F /* LeakAvoider.swift */; };
 		5EFA98C3ABD0EF6125F4B3367388DF85 /* Pods-Maraca_Example-umbrella.h in Headers */ = {isa = PBXBuildFile; fileRef = F011270CB614915C6025945A5AA4181E /* Pods-Maraca_Example-umbrella.h */; settings = {ATTRIBUTES = (Public, ); }; };
 		6E9B167E9E0E3157DCB1F05D17C9B81D /* SktCapturePropertyIds.h in Headers */ = {isa = PBXBuildFile; fileRef = 356ACCE10D3DD0CE74147B3AB50DC55B /* SktCapturePropertyIds.h */; settings = {ATTRIBUTES = (Public, ); }; };
 		6F9A75AD3BFCC7D4CC59FB41D42859A9 /* socketmobilepublickey.pem in Resources */ = {isa = PBXBuildFile; fileRef = 34CA621B5B8189155C3AA4984789B7F6 /* socketmobilepublickey.pem */; };
@@ -96,6 +97,7 @@
 		523CCAC3238472300088B24F /* MaracaConstants.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = MaracaConstants.swift; sourceTree = "<group>"; };
 		523CCAC4238472300088B24F /* Client.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = Client.swift; sourceTree = "<group>"; };
 		523CCAC5238472300088B24F /* Protocol+Declarations.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = "Protocol+Declarations.swift"; sourceTree = "<group>"; };
+		523CCB082385B13B0088B24F /* LeakAvoider.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LeakAvoider.swift; sourceTree = "<group>"; };
 		55D5239B80E619E3F55DB56C6C0D3B36 /* Pods-Maraca_Example-acknowledgements.plist */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.plist.xml; path = "Pods-Maraca_Example-acknowledgements.plist"; sourceTree = "<group>"; };
 		571CD68EFE2216AC9D14CBD95D4DFF71 /* SktCaptureErrors.h */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.c.h; path = SktCaptureErrors.h; sourceTree = "<group>"; };
 		581F87F0C0384BEDDB41EB585286A148 /* Pods-Maraca_Example.modulemap */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.module; path = "Pods-Maraca_Example.modulemap"; sourceTree = "<group>"; };
@@ -269,6 +271,7 @@
 				523CCAC1238472300088B24F /* Maraca.swift */,
 				523CCAC3238472300088B24F /* MaracaConstants.swift */,
 				523CCAC5238472300088B24F /* Protocol+Declarations.swift */,
+				523CCB082385B13B0088B24F /* LeakAvoider.swift */,
 			);
 			path = Classes;
 			sourceTree = "<group>";
@@ -587,6 +590,7 @@
 				523CCAC7238472300088B24F /* Maraca.swift in Sources */,
 				523CCACA238472300088B24F /* Client.swift in Sources */,
 				523CCAC6238472300088B24F /* ClientDevice.swift in Sources */,
+				523CCB092385B13B0088B24F /* LeakAvoider.swift in Sources */,
 				523CCAC8238472300088B24F /* JsonRPCObject.swift in Sources */,
 				523CCACB238472300088B24F /* Protocol+Declarations.swift in Sources */,
 				19736B7960F54C1792E7AA201DA2E23B /* Maraca-dummy.m in Sources */,
