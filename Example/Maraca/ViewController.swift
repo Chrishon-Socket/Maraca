@@ -305,7 +305,6 @@ extension ViewController: MaracaDelegate {
         // Extend the CaptureHelperDelegate if you'd like to return
         // control of Capture to "this" view controller.
         // Then uncomment the next line
-        Maraca.shared.capture?.pushDelegate(self)
 //        capture?.pushDelegate(self)
     }
         
