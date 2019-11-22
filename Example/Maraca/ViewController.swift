@@ -7,14 +7,50 @@
 //
 
 import UIKit
+import WebKit
 import Maraca
 
 class ViewController: UIViewController {
+    
+    // MARK: - Variables
+    
+    private var webViewConfiguration = WKWebViewConfiguration()
+    private var userContentController = WKUserContentController()
+    private var javaScriptTemplate = String()
+    
+    // These message handlers may come from you own web application
+    enum YourOwnMessageHandlers: String, CaseIterable {
+        case someMessageHandler = "someMessageHandler"
+        // Add as many as you need...
+    }
+    
+    
+    
+    // MARK: - UI Elements
+    
+    
+    private var webview: WKWebView!
+    
+    
 
+    
+    
+    
+    
+    
+    
+    // MARK: - View life cycle
+    
     override func viewDidLoad() {
         super.viewDidLoad()
         // Do any additional setup after loading the view, typically from a nib.
         
+        setupJavascriptTemplate()
+        setupWebviewConfiguration()
+        
+        Maraca.shared.setDelegate(to: self)
+        
+        setupUIElements()
     }
 
     override func didReceiveMemoryWarning() {
@@ -22,5 +58,254 @@ class ViewController: UIViewController {
         // Dispose of any resources that can be recreated.
     }
 
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    // MARK: - Functions
+    
+    
 }
 
+
+// MARK: - Setup functions
+
+extension ViewController {
+    
+    private func setupJavascriptTemplate() {
+        // load the javascript that will put the decoded data into
+        // the most appropriate field
+        guard let path = Bundle.main.path(forResource: "getInputForDecodedData", ofType: "js") else {
+            return
+        }
+        if let content = try? String(contentsOfFile: path, encoding: String.Encoding.utf8) {
+            javaScriptTemplate=content
+        }
+    }
+    
+    private func setupWebviewConfiguration() {
+        webViewConfiguration.applicationNameForUserAgent = "Rumba"
+        // wire the user content controller to this view controller and to the webView config
+        userContentController.add(LeakAvoider(delegate: self), name: "observe")
+        webViewConfiguration.userContentController = userContentController
+        self.addJavascript(userContentController)
+    }
+    
+    private func addJavascript(_ userContentControler : WKUserContentController) {
+        let userScript = WKUserScript(source: javaScriptTemplate, injectionTime:WKUserScriptInjectionTime.atDocumentEnd, forMainFrameOnly:true)
+        userContentController.addUserScript(userScript)
+        
+        YourOwnMessageHandlers.allCases.forEach { (messageHandler) in
+            userContentController.add(LeakAvoider(delegate: self), name: messageHandler.rawValue)
+        }
+        
+        Maraca.shared.addMessageHandlers(to: userContentController, scriptMessageHandler: self)
+        
+    }
+    
+    private func setupUIElements() {
+        
+        webview = {
+            let w = WKWebView(frame: .zero, configuration: webViewConfiguration)
+            w.translatesAutoresizingMaskIntoConstraints = false
+            w.contentMode = UIView.ContentMode.redraw
+            w.navigationDelegate = self
+            return w
+       }()
+        
+        view.addSubview(webview)
+        
+        webview.leadingAnchor.constraint(equalTo: view.leadingAnchor).isActive = true
+        if #available(iOS 11.0, *) {
+            webview.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor).isActive = true
+            webview.bottomAnchor.constraint(equalTo: view.safeAreaLayoutGuide.bottomAnchor).isActive = true
+        } else {
+            // Fallback on earlier versions
+            webview.topAnchor.constraint(equalTo: view.topAnchor).isActive = true
+            webview.bottomAnchor.constraint(equalTo: view.bottomAnchor).isActive = true
+        }
+        webview.trailingAnchor.constraint(equalTo: view.trailingAnchor).isActive = true
+        
+        loadTestPage()
+    }
+    
+    private func loadTestPage() {
+        let urlString = "https://capturesdkjavascript.z4.web.core.windows.net/maraca/test.html"
+        
+        guard let url = URL(string: urlString) else {
+            fatalError("This URL no longer exists")
+        }
+        
+        let urlRequest = URLRequest(url: url)
+        webview.load(urlRequest)
+        
+    }
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+// MARK: - WKNavigationDelegate
+
+extension ViewController: WKNavigationDelegate {
+    
+    
+    func webView(_ webView: WKWebView, decidePolicyFor navigationAction: WKNavigationAction, decisionHandler: @escaping (WKNavigationActionPolicy) -> Void) {
+        print("webview url from navigation \(String(describing: webView.url?.absoluteString))")
+        switch navigationAction.navigationType {
+        case .backForward:
+            print("back forward")
+        case .formResubmitted:
+            print("form resubmitted")
+        case .formSubmitted:
+            print("form submitted")
+        case .linkActivated:
+            print("link activated")
+        case .other:
+            print("other")
+        case .reload:
+            print("reload")
+        }
+        
+        
+        decisionHandler( WKNavigationActionPolicy.allow )
+    }
+    
+    func webView(_ webView: WKWebView, didStartProvisionalNavigation navigation: WKNavigation!) {
+        
+        // Check if a Client exists for the url that this WKWebView
+        // is loading
+        // Perhaps the user performed these actions in this order:
+        //
+        // 1) navigate to their web application (with CaptureJS enabled)
+        // 2) opened a new client
+        // 3) navigate to http://www.google.com to research one of our products
+        // 4) click a link to http://www.socketmobile.com/products to view up one of our products
+        // 5) manually navigate to their web application (instead of just pressing the back button)
+        //
+        // In this case, we want to retrieve the client that was opened in step 2
+        // and reactivate this client
+        if let webpageURLString = webView.url?.absoluteString, let client = Maraca.shared.getClient(for: webpageURLString) {
+            
+            Maraca.shared.activateClient(client)
+        } else {
+            
+            // Otherwise, this WKWebView is loading
+            // a completely different web app that
+            // may not be using CaptureJS
+            // Return SKTCapture delegation to Rumba.
+            // But since this is called before the WKScriptMessageHandler,
+            // the "completely different web app" will open
+            // Capture with its own AppInfo if it is using CaptureJS
+            if let _ = Maraca.shared.activeClient {
+                Maraca.shared.resignActiveClient()
+            }
+            
+            
+            // Tell Capture within this app to "become" the delegate
+            self.becomeCaptureResponder()
+        }
+        
+    }
+    
+    func webView(_ webView: WKWebView, didFinish navigation: WKNavigation!) {
+        
+    }
+    
+}
+
+
+
+
+
+// MARK: - WKScriptMessageHandler
+
+extension ViewController: WKScriptMessageHandler {
+    
+    func userContentController(_ userContentController: WKUserContentController, didReceive message: WKScriptMessage) {
+        
+        if Maraca.shared.didReceiveCaptureJSMessage(message: message) {
+            return
+        } else {
+            
+        }
+        
+        // Otherwise, handle your own message handlers
+        
+//        guard let messageBody = message.body as? String, let webview = message.webView else {
+//            return
+//        }
+    }
+}
+
+
+
+
+
+
+
+
+
+
+// MARK: - MaracaDelegate
+
+extension ViewController: MaracaDelegate {
+    
+    func maraca(_ maraca: Maraca, webviewDidOpenCaptureWith client: Client) {
+        print("clients count: \(maraca.clientsList.count)")
+        for (key, value) in maraca.clientsList {
+            print("key: \(key), value: \(value)")
+        }
+    }
+    
+    func maraca(_ maraca: Maraca, webviewDidCloseCaptureWith client: Client) {
+        becomeCaptureResponder()
+    }
+    
+    
+    
+    
+    
+    
+    // This is called from the WebviewController when
+    // a new web page is loaded that does not use CaptureJS
+    private func becomeCaptureResponder() {
+        // Extend the CaptureHelperDelegate if you'd like to return
+        // control of Capture to "this" view controller.
+        // Then uncomment the next line
+//        capture?.pushDelegate(self)
+    }
+        
+}
