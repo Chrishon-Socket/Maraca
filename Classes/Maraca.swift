@@ -91,13 +91,9 @@ extension Maraca {
                     // Display an alert to the user to restart the app
                     // if attempts to open capture have failed twice
 
-//                    let errorMessageTitle = "\(Constants.openCaptureFailedAlertMessageTitle) \(result.rawValue)"
-//                    let alertController = UIAlertController(title: Constants.openCaptureFailedAlertTitle, message: errorMessageTitle, preferredStyle: .alert)
-//
-//                    let okAction = UIAlertAction(title: Constants.openCaptureFailedOkayTitle, style: .default, handler: nil)
-//
-//                    alertController.addAction(okAction)
-//                    strongSelf.present(alertController, animated: true, completion: nil)
+                    // What should we do here in case of this issue?
+                    // This is a SKTCapture error
+                    
                 } else {
 
                     // Attempt to open capture again
