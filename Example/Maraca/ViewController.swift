@@ -48,7 +48,10 @@ class ViewController: UIViewController {
         setupJavascriptTemplate()
         setupWebviewConfiguration()
         
-        Maraca.shared.setDelegate(to: self)
+        Maraca.shared.begin(withAppKey: "MC4CFQDmrCRRlaSC33YMekHZlboDEd9rJwIVAJvB5rzcoMavKHJGBFEGVGJn5kN4",
+                            appId: "ios:com.socketmobile.Maraca-Example",
+                            developerId: "bb57d8e1-f911-47ba-b510-693be162686a",
+                            delegate: self)
         
         setupUIElements()
     }
