@@ -15,6 +15,8 @@ public final class Maraca: NSObject {
     
     public private(set) weak var capture: CaptureHelper?
     
+    private var numberOfFailedOpenCaptureAttempts: Int = 0
+    
     private weak var delegate: MaracaDelegate?
     
     public static let shared = Maraca(capture: CaptureHelper.sharedInstance)
@@ -66,8 +68,46 @@ public final class Maraca: NSObject {
 
 extension Maraca {
     
-    public func setDelegate(to: MaracaDelegate) {
-        delegate = to
+    public func begin(withAppKey appKey: String, appId: String, developerId: String, delegate: MaracaDelegate) {
+        
+        self.delegate = delegate
+        
+        let AppInfo = SKTAppInfo()
+        AppInfo.appKey = appKey
+        AppInfo.appID = appId
+        AppInfo.developerID = developerId
+        
+        capture?.dispatchQueue = DispatchQueue.main
+        capture?.openWithAppInfo(AppInfo) { [weak self] (result) in
+            guard let strongSelf = self else { return }
+            print("Result of Capture initialization: \(result.rawValue)")
+            
+            if result == SKTResult.E_NOERROR {
+                
+            } else {
+
+                if strongSelf.numberOfFailedOpenCaptureAttempts == 2 {
+
+                    // Display an alert to the user to restart the app
+                    // if attempts to open capture have failed twice
+
+//                    let errorMessageTitle = "\(Constants.openCaptureFailedAlertMessageTitle) \(result.rawValue)"
+//                    let alertController = UIAlertController(title: Constants.openCaptureFailedAlertTitle, message: errorMessageTitle, preferredStyle: .alert)
+//
+//                    let okAction = UIAlertAction(title: Constants.openCaptureFailedOkayTitle, style: .default, handler: nil)
+//
+//                    alertController.addAction(okAction)
+//                    strongSelf.present(alertController, animated: true, completion: nil)
+                } else {
+
+                    // Attempt to open capture again
+                    print("\n--- Failed to open capture. attempting again---\n")
+                    strongSelf.numberOfFailedOpenCaptureAttempts += 1
+                    strongSelf.begin(withAppKey: appKey, appId: appId, developerId: developerId, delegate: delegate)
+                }
+            }
+            
+        }
     }
 }
 
