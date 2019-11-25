@@ -620,7 +620,7 @@ extension Maraca: CaptureHelperAllDelegate {
         }
         
         guard
-            let deviceName = device.deviceInfo.name,
+            let deviceName = device.deviceInfo.name?.escaped,
             let deviceGuid = device.deviceInfo.guid,
             let clientHandle = activeClient.handle else { return }
         
@@ -665,7 +665,7 @@ extension Maraca: CaptureHelperAllDelegate {
         }
         
         guard
-            let deviceName = device.deviceInfo.name,
+            let deviceName = device.deviceInfo.name?.escaped,
             let deviceGuid = device.deviceInfo.guid,
             let clientHandle = activeClient.handle else { return }
         
@@ -849,7 +849,7 @@ extension Maraca {
     public static func convertJsonRpcToString(_ jsonRpc: [String: Any]) -> String? {
         do {
             let jsonAsData = try JSONSerialization.data(withJSONObject: jsonRpc, options: [])
-            return String(data: jsonAsData, encoding: String.Encoding.ascii)
+            return String(data: jsonAsData, encoding: String.Encoding.utf8)
         } catch let error {
             print("Error converting JsonRpc object to String: \(error.localizedDescription)")
             return nil
