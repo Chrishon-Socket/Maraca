@@ -158,7 +158,7 @@ extension String {
                         "\n": "\\n",
                         "\r": "\\r",
                         "\"": "\\\"",
-                        "\'": "\\'",
+                        "'": "%27",
         ]
         
         return entities
