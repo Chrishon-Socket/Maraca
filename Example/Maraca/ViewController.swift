@@ -14,10 +14,6 @@ class ViewController: UIViewController {
     
     // MARK: - Variables
     
-    private var webViewConfiguration = WKWebViewConfiguration()
-    private var userContentController = WKUserContentController()
-    private var javaScriptTemplate = String()
-    
     // These message handlers may come from you own web application
     enum YourOwnMessageHandlers: String, CaseIterable {
         case someMessageHandler = "someMessageHandler"
@@ -44,39 +40,18 @@ class ViewController: UIViewController {
     override func viewDidLoad() {
         super.viewDidLoad()
         // Do any additional setup after loading the view, typically from a nib.
+
+        setupMaraca()
         
-        setupJavascriptTemplate()
-        setupWebviewConfiguration()
-        
-        Maraca.shared.begin(withAppKey: "MC4CFQDmrCRRlaSC33YMekHZlboDEd9rJwIVAJvB5rzcoMavKHJGBFEGVGJn5kN4",
-                            appId: "ios:com.socketmobile.Maraca-Example",
-                            developerId: "bb57d8e1-f911-47ba-b510-693be162686a",
-                            delegate: self)
-        
-        setupUIElements()
+        // This can be called either in the Maraca Setup completion
+        // handler or here
+//        setupUIElements()
     }
 
     override func didReceiveMemoryWarning() {
         super.didReceiveMemoryWarning()
         // Dispose of any resources that can be recreated.
     }
-
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    // MARK: - Functions
-    
     
 }
 
@@ -85,41 +60,27 @@ class ViewController: UIViewController {
 
 extension ViewController {
     
-    private func setupJavascriptTemplate() {
-        // load the javascript that will put the decoded data into
-        // the most appropriate field
-        guard let path = Bundle.main.path(forResource: "getInputForDecodedData", ofType: "js") else {
-            return
-        }
-        if let content = try? String(contentsOfFile: path, encoding: String.Encoding.utf8) {
-            javaScriptTemplate=content
-        }
-    }
-    
-    private func setupWebviewConfiguration() {
-        webViewConfiguration.applicationNameForUserAgent = "Rumba"
-        // wire the user content controller to this view controller and to the webView config
-        userContentController.add(LeakAvoider(delegate: self), name: "observe")
-        webViewConfiguration.userContentController = userContentController
-        self.addJavascript(userContentController)
-    }
-    
-    private func addJavascript(_ userContentControler : WKUserContentController) {
-        let userScript = WKUserScript(source: javaScriptTemplate, injectionTime:WKUserScriptInjectionTime.atDocumentEnd, forMainFrameOnly:true)
-        userContentController.addUserScript(userScript)
+    private func setupMaraca() {
         
-        YourOwnMessageHandlers.allCases.forEach { (messageHandler) in
-            userContentController.add(LeakAvoider(delegate: self), name: messageHandler.rawValue)
-        }
+        let appKey =        "MC4CFQDmrCRRlaSC33YMekHZlboDEd9rJwIVAJvB5rzcoMavKHJGBFEGVGJn5kN4"
+        let appId =         "ios:com.socketmobile.Maraca-Example"
+        let developerId =   "bb57d8e1-f911-47ba-b510-693be162686a"
         
-        Maraca.shared.addMessageHandlers(to: userContentController, scriptMessageHandler: self)
-        
+        Maraca.shared.injectCustomJavascript(mainBundle: Bundle.main, javascriptFileNames: ["getInputForDecodedData"])
+            .observeJavascriptMessageHandlers(YourOwnMessageHandlers.allCases.map { $0.rawValue })
+            .setDelegate(to: self)
+            .begin(withAppKey: appKey,
+                   appId: appId,
+                   developerId: developerId,
+                   completion: { (completed) in
+                       self.setupUIElements()
+            })
     }
     
     private func setupUIElements() {
-        
+    
         webview = {
-            let w = WKWebView(frame: .zero, configuration: webViewConfiguration)
+            let w = WKWebView(frame: .zero, configuration: Maraca.shared.webViewConfiguration)
             w.translatesAutoresizingMaskIntoConstraints = false
             w.contentMode = UIView.ContentMode.redraw
             w.navigationDelegate = self
@@ -140,6 +101,7 @@ extension ViewController {
         webview.trailingAnchor.constraint(equalTo: view.trailingAnchor).isActive = true
         
         loadTestPage()
+        
     }
     
     private func loadTestPage() {
@@ -253,26 +215,6 @@ extension ViewController: WKNavigationDelegate {
 
 
 
-// MARK: - WKScriptMessageHandler
-
-extension ViewController: WKScriptMessageHandler {
-    
-    func userContentController(_ userContentController: WKUserContentController, didReceive message: WKScriptMessage) {
-        
-        if Maraca.shared.didReceiveCaptureJSMessage(message: message) {
-            return
-        } else {
-            
-        }
-        
-        // Otherwise, handle your own message handlers
-        
-//        guard let messageBody = message.body as? String, let webview = message.webView else {
-//            return
-//        }
-    }
-}
-
 
 
 
@@ -297,7 +239,13 @@ extension ViewController: MaracaDelegate {
         becomeCaptureResponder()
     }
     
-    
+    func maraca(_ maraca: Maraca, didReceive scriptMessage: WKScriptMessage) {
+        // Otherwise, handle your own message handlers
+
+//        guard let messageBody = message.body as? String, let webview = message.webView else {
+//            return
+//        }
+    }
     
     
     

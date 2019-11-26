@@ -36,6 +36,9 @@ public final class Maraca: NSObject {
     
     
     
+    public private(set) var webViewConfiguration = WKWebViewConfiguration()
+    private var userContentController = WKUserContentController()
+    
     private enum MaracaMessageHandlers: String, CaseIterable {
         case maracaSendJsonRpc
     }
@@ -51,7 +54,7 @@ public final class Maraca: NSObject {
     
     
     
-    // MARK: - Initializers
+    // MARK: - Initializers (PRIVATE / Singleton)
     
     private init(capture: CaptureHelper) {
         super.init()
@@ -65,12 +68,61 @@ public final class Maraca: NSObject {
 
 
 
+// MARK: - Setup Functions
 
 extension Maraca {
     
-    public func begin(withAppKey appKey: String, appId: String, developerId: String, delegate: MaracaDelegate) {
+    @discardableResult
+    public func injectCustomJavascript(mainBundle: Bundle, javascriptFileNames: [String]) -> Maraca {
         
-        self.delegate = delegate
+        if let applicationDisplayName = mainBundle.displayName {
+            webViewConfiguration.applicationNameForUserAgent = applicationDisplayName
+        }
+        
+        let javascriptFileExtension = "js"
+        
+        for fileName in javascriptFileNames {
+            guard let pathForResource = mainBundle.path(forResource: fileName, ofType: javascriptFileExtension) else {
+                continue
+            }
+            if let contentsOfJavascriptFile = try? String(contentsOfFile: pathForResource, encoding: String.Encoding.utf8) {
+                
+                let userScript = WKUserScript(source: contentsOfJavascriptFile, injectionTime: WKUserScriptInjectionTime.atDocumentEnd, forMainFrameOnly:true)
+                userContentController.addUserScript(userScript)
+            }
+        }
+        
+        return self
+    }
+    
+    @discardableResult
+    public func observeJavascriptMessageHandlers(_ customMessageHandlers: [String]? = nil) -> Maraca {
+        
+        // wire the user content controller to this view controller and to the webView config
+        userContentController.add(LeakAvoider(delegate: self), name: "observe")
+            
+        // Observe OPTIONAL custom message handlers that user sends
+        customMessageHandlers?.forEach { (messageHandlerString) in
+            userContentController.add(LeakAvoider(delegate: self), name: messageHandlerString)
+        }
+        
+        // Observe Maraca-specific message handlers such as "open client", etc.
+        MaracaMessageHandlers.allCases.forEach { (messageHandler) in
+            userContentController.add(LeakAvoider(delegate: self), name: messageHandler.rawValue)
+        }
+        
+        webViewConfiguration.userContentController = userContentController
+        
+        return self
+    }
+    
+    @discardableResult
+    public func setDelegate(to: MaracaDelegate) -> Maraca {
+        self.delegate = to
+        return self
+    }
+    
+    public func begin(withAppKey appKey: String, appId: String, developerId: String, completion: ((Bool) -> ())? = nil) {
         
         let AppInfo = SKTAppInfo()
         AppInfo.appKey = appKey
@@ -83,7 +135,7 @@ extension Maraca {
             print("Result of Capture initialization: \(result.rawValue)")
             
             if result == SKTResult.E_NOERROR {
-                
+                completion?(true)
             } else {
 
                 if strongSelf.numberOfFailedOpenCaptureAttempts == 2 {
@@ -92,18 +144,31 @@ extension Maraca {
                     // if attempts to open capture have failed twice
 
                     // What should we do here in case of this issue?
-                    // This is a SKTCapture error
+                    // This is a SKTCapture-specific error
+                    completion?(false)
                     
                 } else {
 
                     // Attempt to open capture again
-                    print("\n--- Failed to open capture. attempting again---\n")
+                    print("\n--- Failed to open capture. attempting again...\n")
                     strongSelf.numberOfFailedOpenCaptureAttempts += 1
-                    strongSelf.begin(withAppKey: appKey, appId: appId, developerId: developerId, delegate: delegate)
+                    strongSelf.begin(withAppKey: appKey, appId: appId, developerId: developerId)
                 }
             }
-            
         }
+    }
+    
+    public func stop(_ completion: ((Bool) -> ())?) {
+        capture?.closeWithCompletionHandler({ (result) in
+            if result == SKTResult.E_NOERROR {
+                completion?(true)
+            } else {
+                
+                // What should we do here in case of this issue?
+                // This is a SKTCapture-specific error
+                completion?(false)
+            }
+        })
     }
 }
 
@@ -234,15 +299,21 @@ extension Maraca {
 
 // MARK: - WKScriptMessageHandler
 
-extension Maraca {
+extension Maraca: WKScriptMessageHandler {
     
-    public func addMessageHandlers(to userContentController: WKUserContentController, scriptMessageHandler: WKScriptMessageHandler) {
-        MaracaMessageHandlers.allCases.forEach { (messageHandler) in
-            userContentController.add(LeakAvoider(delegate: scriptMessageHandler), name: messageHandler.rawValue)
+    public func userContentController(_ userContentController: WKUserContentController, didReceive message: WKScriptMessage) {
+        
+        if didReceiveCaptureJSMessage(message: message) {
+            return
+        } else {
+            
+            // Otherwise, the developer can handle their own message handlers
+            // (The ones that were passed into `observeJavascriptMessageHandlers(<#T##customMessageHandlers: [String]##[String]#>)`
+            delegate?.maraca(self, didReceive: message)
         }
     }
     
-    public func didReceiveCaptureJSMessage(message: WKScriptMessage) -> Bool {
+    private func didReceiveCaptureJSMessage(message: WKScriptMessage) -> Bool {
         
         guard let messageBody = message.body as? String, let webview = message.webView else {
             return false
@@ -835,7 +906,7 @@ extension Maraca: CaptureHelperAllDelegate {
 
 extension Maraca {
     
-    public static func convertToDictionary(text: String) -> [String: Any]? {
+    private static func convertToDictionary(text: String) -> [String: Any]? {
         if let data = text.data(using: .utf8) {
             do {
                 return try JSONSerialization.jsonObject(with: data, options: []) as? [String: Any]
@@ -880,7 +951,7 @@ extension Maraca {
     
     
     
-    /// construct a json dictionary with information based on the SKTResult
+    /// Construct a json dictionary with information based on the SKTResult
     /// passed in. Then send the dictionary to the web page that the WKWebView
     /// is displaying
     public static func sendErrorResponse(withError error: SKTResult, webView: WKWebView, handle: Int?, responseId: Int?) {
