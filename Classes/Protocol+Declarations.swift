@@ -7,7 +7,7 @@
 
 import Foundation
 import SKTCapture
-
+import WebKit.WKScriptMessage
 // This file maintains all of the protocols, typealiases,
 // enums and utility structs used within Maraca
 
@@ -16,12 +16,19 @@ import SKTCapture
 @objc public protocol MaracaDelegate: class {
     @objc optional func maraca(_ maraca: Maraca, webviewDidOpenCaptureWith client: Client)
     @objc optional func maraca(_ maraca: Maraca, webviewDidCloseCaptureWith client: Client)
+    func maraca(_ maraca: Maraca, didReceive scriptMessage: WKScriptMessage)
 }
 
 
 
 
-
+extension Bundle {
+    // Name of the app - title under the icon.
+    var displayName: String? {
+            return object(forInfoDictionaryKey: "CFBundleDisplayName") as? String ??
+                object(forInfoDictionaryKey: "CFBundleName") as? String
+    }
+}
 
 
 /// New Swift-5 property to be used in completion handlers that
