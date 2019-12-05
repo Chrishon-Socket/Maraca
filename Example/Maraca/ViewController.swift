@@ -66,7 +66,7 @@ extension ViewController {
         let appId =         "ios:com.socketmobile.Maraca-Example"
         let developerId =   "bb57d8e1-f911-47ba-b510-693be162686a"
         
-        Maraca.shared.injectCustomJavascript(mainBundle: Bundle.main, javascriptFileNames: ["getInputForDecodedData"])
+        Maraca.shared.injectCustomJavascript(mainBundle: bundle, javascriptFileNames: ["getInputForDecodedData"])
             .observeJavascriptMessageHandlers(YourOwnMessageHandlers.allCases.map { $0.rawValue })
             .setDelegate(to: self)
             .begin(withAppKey: appKey,
@@ -85,7 +85,7 @@ extension ViewController {
             w.contentMode = UIView.ContentMode.redraw
             w.navigationDelegate = self
             return w
-       }()
+        }()
         
         view.addSubview(webview)
         
@@ -146,9 +146,11 @@ extension ViewController {
 
 extension ViewController: WKNavigationDelegate {
     
-    
     func webView(_ webView: WKWebView, decidePolicyFor navigationAction: WKNavigationAction, decisionHandler: @escaping (WKNavigationActionPolicy) -> Void) {
-        print("webview url from navigation \(String(describing: webView.url?.absoluteString))")
+        
+        if let webviewURL = webView.url?.absoluteString {
+            print("webview url from navigation: \(String(describing: webviewURL))")
+        }
         switch navigationAction.navigationType {
         case .backForward:
             print("back forward")
@@ -256,7 +258,7 @@ extension ViewController: MaracaDelegate {
         // Extend the CaptureHelperDelegate if you'd like to return
         // control of Capture to "this" view controller.
         // Then uncomment the next line
-//        capture?.pushDelegate(self)
+        Maraca.shared.resignCaptureDelegate(to: self)
     }
         
 }
