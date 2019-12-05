@@ -12,7 +12,7 @@ import WebKit.WKScriptMessage
 // enums and utility structs used within Maraca
 
 
-/// delegate used by Maraca class
+/// Public optional delegate used by Maraca class.
 @objc public protocol MaracaDelegate: class {
     @objc optional func maraca(_ maraca: Maraca, webviewDidOpenCaptureWith client: Client)
     @objc optional func maraca(_ maraca: Maraca, webviewDidCloseCaptureWith client: Client)
@@ -22,7 +22,7 @@ import WebKit.WKScriptMessage
 
 
 
-extension Bundle {
+internal extension Bundle {
     // Name of the app - title under the icon.
     var displayName: String? {
             return object(forInfoDictionaryKey: "CFBundleDisplayName") as? String ??
@@ -31,12 +31,12 @@ extension Bundle {
 }
 
 
-/// New Swift-5 property to be used in completion handlers that
+/// New Swift 5.0 property to be used in completion handlers that
 /// providers either a .success or .failure.
 /// The first argument is the success result, the second is the failure result
 public typealias ResultResponse = Result<[String: Any], ErrorResponse>
 
-/// typealias for common completion handler
+/// Typealias for common completion handler
 public typealias ClientReceiverCompletionHandler = (ResultResponse) -> ()
 
 /// Anonymous closure that takes the ResultResponse as a parameter

@@ -947,6 +947,9 @@ extension Maraca {
     
     
     
+    public func resignCaptureDelegate(to: CaptureHelperAllDelegate) {
+        capture?.pushDelegate(to)
+    }
     
     
     

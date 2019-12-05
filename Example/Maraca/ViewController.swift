@@ -65,6 +65,7 @@ extension ViewController {
         let appKey =        "MC4CFQDmrCRRlaSC33YMekHZlboDEd9rJwIVAJvB5rzcoMavKHJGBFEGVGJn5kN4"
         let appId =         "ios:com.socketmobile.Maraca-Example"
         let developerId =   "bb57d8e1-f911-47ba-b510-693be162686a"
+        let bundle = Bundle.main
         
         Maraca.shared.injectCustomJavascript(mainBundle: bundle, javascriptFileNames: ["getInputForDecodedData"])
             .observeJavascriptMessageHandlers(YourOwnMessageHandlers.allCases.map { $0.rawValue })
@@ -258,7 +259,7 @@ extension ViewController: MaracaDelegate {
         // Extend the CaptureHelperDelegate if you'd like to return
         // control of Capture to "this" view controller.
         // Then uncomment the next line
-        Maraca.shared.resignCaptureDelegate(to: self)
+//        Maraca.shared.resignCaptureDelegate(to: self)
     }
         
 }
