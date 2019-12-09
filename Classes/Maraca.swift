@@ -674,6 +674,26 @@ extension Maraca: CaptureHelperAllDelegate {
         
     }
     
+    public func didNotifyArrivalForDeviceManager(_ device: CaptureHelperDeviceManager, withResult result: SKTResult) {
+        device.dispatchQueue = DispatchQueue.main
+        
+        device.getFavoriteDevicesWithCompletionHandler { (result, favorite) in
+            if result == SKTResult.E_NOERROR {
+                device.setFavoriteDevices("*", withCompletionHandler: { (result) in
+                    if result != SKTResult.E_NOERROR {
+                        print("Error setting device favorite to '*' on device manager arrival. Error: \(result.rawValue)")
+                    }
+                })
+            } else {
+                print("Error getting device favorite on device manager arrival. Error: \(result.rawValue)")
+            }
+        }
+    }
+    
+    public func didNotifyRemovalForDeviceManager(_ device: CaptureHelperDeviceManager, withResult result: SKTResult) {
+        
+    }
+    
     public func didNotifyArrivalForDevice(_ device: CaptureHelperDevice, withResult result: SKTResult) {
         
         guard let activeClient = activeClient else { return }
