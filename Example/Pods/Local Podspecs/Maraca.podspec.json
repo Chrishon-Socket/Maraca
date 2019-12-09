@@ -4,7 +4,7 @@
   "summary": "Maraca bridges a web application with the SKTCapture cocoapod framework.",
   "swift_versions": "5.0",
   "description": "Use Socket Mobile barcode scanners and RFID readers and writers  with your web application by bridging iOS WKWebView with SKTCapture SDK\nWKWebView with SKTCapture",
-  "homepage": "https://github.com/Chrishon-Socket/Maraca",
+  "homepage": "https://github.com/SocketMobile/Maraca",
   "license": {
     "type": "MIT",
     "file": "LICENSE"
@@ -13,7 +13,7 @@
     "Socket": "developers@socketmobile.com"
   },
   "source": {
-    "git": "https://github.com/Chrishon-Socket/Maraca.git",
+    "git": "https://github.com/SocketMobile/Maraca.git",
     "tag": "0.1.0"
   },
   "platforms": {
