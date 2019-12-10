@@ -57,4 +57,10 @@ struct MaracaConstants {
         case minute
     }
     
+    struct Strings {
+        // Used to set the device manager favorites to "all"
+        // Allowing any RFID reader/writer to connect
+        static let favoritesAll: String = "*"
+    }
+    
 }
