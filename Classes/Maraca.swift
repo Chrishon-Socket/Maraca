@@ -679,11 +679,18 @@ extension Maraca: CaptureHelperAllDelegate {
         
         device.getFavoriteDevicesWithCompletionHandler { (result, favorite) in
             if result == SKTResult.E_NOERROR {
-                device.setFavoriteDevices("*", withCompletionHandler: { (result) in
-                    if result != SKTResult.E_NOERROR {
-                        print("Error setting device favorite to '*' on device manager arrival. Error: \(result.rawValue)")
-                    }
-                })
+                if favorite != MaracaConstants.Strings.favoritesAll {
+                    // Most likely, the favorite is set to "" by default.
+                    // Change to "*" to connect to any RFID reader/writer.
+                    device.setFavoriteDevices(MaracaConstants.Strings.favoritesAll, withCompletionHandler: { (result) in
+                        if result != SKTResult.E_NOERROR {
+                            print("Error setting device favorite to '*' on device manager arrival. Error: \(result.rawValue)")
+                        }
+                    })
+                } else {
+                    // Do nothing. Any RFID reader/writer can connect to the
+                    // application.
+                }
             } else {
                 print("Error getting device favorite on device manager arrival. Error: \(result.rawValue)")
             }
