@@ -1,7 +1,7 @@
 use_frameworks!
 
 target 'Maraca_Example' do
-  pod 'SKTCapture', '~>1.1'
+  pod 'SKTCapture', '~>1.2'
   pod 'Maraca', :path => '../'
 
   target 'Maraca_Tests' do
