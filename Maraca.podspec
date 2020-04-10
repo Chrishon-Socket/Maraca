@@ -41,5 +41,5 @@ WKWebView with SKTCapture
 
   # s.public_header_files = 'Pod/Classes/**/*.h'
   # s.frameworks = 'UIKit', 'MapKit'
-  s.dependency 'SKTCapture', '~>1.1'
+  s.dependency 'SKTCapture', '~>1.2'
 end
