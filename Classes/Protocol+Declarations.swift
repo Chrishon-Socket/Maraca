@@ -161,7 +161,7 @@ extension String {
     // revealing the original string-value.
     
     enum escapeCharacters: String, CaseIterable {
-        case zero               = "\0"
+        case nulTerminatoor     = "\0"
         case horizontalTab      = "\t"
         case newLine            = "\n"
         case carriageReturn     = "\r"
@@ -171,7 +171,7 @@ extension String {
     }
     
     var escaped: String {
-        let entities = [escapeCharacters.zero.rawValue:             "\\0",
+        let entities = [escapeCharacters.nulTerminatoor.rawValue:   "\\0",
                         escapeCharacters.horizontalTab.rawValue:    "\\t",
                         escapeCharacters.newLine.rawValue:          "\\n",
                         escapeCharacters.carriageReturn.rawValue:   "\\r",
