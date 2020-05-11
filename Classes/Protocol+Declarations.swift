@@ -159,19 +159,36 @@ extension String {
     // This extension adds an extra backslash to the response json before it is sent.
     // When this value is finally interpreted by the web page, the extra backslash is removed,
     // revealing the original string-value.
+    
+    enum escapeCharacters: String, CaseIterable {
+        case zero               = "\0"
+        case horizontalTab      = "\t"
+        case newLine            = "\n"
+        case carriageReturn     = "\r"
+        case doubleQuote        = "\""
+        case singleQuote        = "\'"
+        case backslash          = "\\"
+    }
+    
     var escaped: String {
-        let entities = ["\0": "\\0",
-                        "\t": "\\t",
-                        "\n": "\\n",
-                        "\r": "\\r",
-                        "\"": "\\\"",
-                        "'": "%27",
+        let entities = [escapeCharacters.zero.rawValue:             "\\0",
+                        escapeCharacters.horizontalTab.rawValue:    "\\t",
+                        escapeCharacters.newLine.rawValue:          "\\n",
+                        escapeCharacters.carriageReturn.rawValue:   "\\r",
+                        escapeCharacters.doubleQuote.rawValue:      "\\\"",
+                        escapeCharacters.singleQuote.rawValue:      "%27"
         ]
         
         return entities
             .reduce(self) { (string, entity) in
                 string.replacingOccurrences(of: entity.key, with: entity.value)
             }
+    }
+    
+    func containsEscapeCharacters() -> Bool {
+        let characters = escapeCharacters.allCases.map ({ $0.rawValue }).joined()
+        let characterSet = CharacterSet(charactersIn: characters)
+        return self.rangeOfCharacter(from: characterSet) != nil
     }
 }
 
@@ -226,10 +243,10 @@ extension SKTCaptureProperty {
         case .none, .notApplicable, .object, .enum:
             throw MaracaError.propertyTypeNotSupported("The SKTCaptureProperty has type: \(type) which is not supported at this time")
         case .string:
-            if self.stringValue?.contains("\n") == true || self.stringValue?.contains("\r") == true {
+            if self.stringValue?.containsEscapeCharacters() == true {
                 propertyValue = self.stringValue?.escaped
             } else {
-                propertyValue =  self.stringValue
+                propertyValue = self.stringValue
             }
         case .ulong:
             propertyValue = self.uLongValue
