@@ -695,95 +695,24 @@ extension Maraca: CaptureHelperAllDelegate {
                 print("Error getting device favorite on device manager arrival. Error: \(result.rawValue)")
             }
         }
+        
+        sendJSONForDeviceArrival(device, result: result)
+        
     }
     
     public func didNotifyRemovalForDeviceManager(_ device: CaptureHelperDeviceManager, withResult result: SKTResult) {
         
+        sendJSONForDeviceRemoval(device, result: result)
     }
     
     public func didNotifyArrivalForDevice(_ device: CaptureHelperDevice, withResult result: SKTResult) {
         
-        guard let activeClient = activeClient else { return }
-        
-        guard result == SKTResult.E_NOERROR else {
-            
-            let errorMessage = "There was an error with arrival of the Socket Mobile device: \(String(describing: device.deviceInfo.name)). Error: \(result)"
-            let errorResponseJsonRpc = Maraca.constructErrorResponse(error: result,
-                                                                     errorMessage: errorMessage,
-                                                                     handle: activeClient.handle,
-                                                                     responseId: nil)
-            
-            activeClient.notifyWebpage(with: errorResponseJsonRpc)
-            return
-        }
-        
-        guard
-            let deviceName = device.deviceInfo.name?.escaped,
-            let deviceGuid = device.deviceInfo.guid,
-            let clientHandle = activeClient.handle else { return }
-        
-        // Send the deviceArrival to the web app along with its guid
-        // The web app may ignore this, but when it is ready to open
-        // the device, it will send the guid back to Maraca
-        // in order to open this device.
-        
-        let jsonRpc: [String: Any] = [
-            MaracaConstants.Keys.jsonrpc.rawValue : Maraca.jsonRpcVersion ?? "2.0",
-            MaracaConstants.Keys.result.rawValue : [
-                MaracaConstants.Keys.handle.rawValue : clientHandle,
-                MaracaConstants.Keys.event.rawValue : [
-                    MaracaConstants.Keys.id.rawValue : 1,
-                    MaracaConstants.Keys.type.rawValue : 6,
-                    MaracaConstants.Keys.value.rawValue : [
-                        MaracaConstants.Keys.guid.rawValue : deviceGuid,
-                        MaracaConstants.Keys.name.rawValue : deviceName,
-                        MaracaConstants.Keys.type.rawValue : device.deviceInfo.deviceType.rawValue
-                    ]
-                ]
-            ]
-        ]
-        
-        activeClient.notifyWebpage(with: jsonRpc)
+        sendJSONForDeviceArrival(device, result: result)
     }
     
     public func didNotifyRemovalForDevice(_ device: CaptureHelperDevice, withResult result: SKTResult) {
         
-        guard let activeClient = activeClient else { return }
-        
-        guard result == SKTResult.E_NOERROR else {
-            
-            let errorMessage = "There was an error with removal of the Socket Mobile device: \(String(describing: device.deviceInfo.name)). Error: \(result)"
-            let errorResponseJsonRpc = Maraca.constructErrorResponse(error: result,
-                                                                     errorMessage: errorMessage,
-                                                                     handle: activeClient.handle,
-                                                                     responseId: nil)
-            
-            activeClient.notifyWebpage(with: errorResponseJsonRpc)
-            return
-        }
-        
-        guard
-            let deviceName = device.deviceInfo.name?.escaped,
-            let deviceGuid = device.deviceInfo.guid,
-            let clientHandle = activeClient.handle else { return }
-        
-        let jsonRpc: [String: Any] = [
-            MaracaConstants.Keys.jsonrpc.rawValue : Maraca.jsonRpcVersion ?? "2.0",
-            MaracaConstants.Keys.result.rawValue : [
-                MaracaConstants.Keys.handle.rawValue : clientHandle,
-                MaracaConstants.Keys.event.rawValue : [
-                    MaracaConstants.Keys.id.rawValue : 2,
-                    MaracaConstants.Keys.type.rawValue : 6,
-                    MaracaConstants.Keys.value.rawValue : [
-                        MaracaConstants.Keys.guid.rawValue : deviceGuid,
-                        MaracaConstants.Keys.name.rawValue : deviceName,
-                        MaracaConstants.Keys.type.rawValue : device.deviceInfo.deviceType.rawValue
-                    ]
-                ]
-            ]
-        ]
-        
-        activeClient.notifyWebpage(with: jsonRpc)
+        sendJSONForDeviceRemoval(device, result: result)
     }
     
     public func didChangePowerState(_ powerState: SKTCapturePowerState, forDevice device: CaptureHelperDevice) {
@@ -833,58 +762,7 @@ extension Maraca: CaptureHelperAllDelegate {
     
     public func didReceiveDecodedData(_ decodedData: SKTCaptureDecodedData?, fromDevice device: CaptureHelperDevice, withResult result: SKTResult) {
         
-        guard
-            let activeClient = activeClient,
-            let clientHandle = activeClient.handle
-        else { return }
-        
-        guard result == SKTResult.E_NOERROR else {
-            
-            let errorResponseJsonRpc = Maraca.constructErrorResponse(error: result,
-                                                                     errorMessage: "There was an error receiving decoded data from the Socket Mobile device: \(String(describing: device.deviceInfo.name)). Error: \(result)",
-                                                                     handle: activeClient.handle,
-                                                                     responseId: nil)
-            
-            activeClient.notifyWebpage(with: errorResponseJsonRpc)
-            return
-        }
-        
-        guard
-            let deviceGuid = device.deviceInfo.guid,
-            let dataFromDecodedDataStruct = decodedData?.decodedData,
-            let dataSourceName = decodedData?.dataSourceName,
-            let dataSourceId = decodedData?.dataSourceID.rawValue
-            else { return }
-        
-        
-        
-        
-        // Confirm that the ClientDevice has been previously opened
-        // by the active client
-        
-        guard activeClient.hasPreviouslyOpenedDevice(with: deviceGuid) else {
-            return
-        }
-        
-        let dataAsIntegerArray: [UInt8] = [UInt8](dataFromDecodedDataStruct)
-        
-        let jsonRpc: [String: Any] = [
-            MaracaConstants.Keys.jsonrpc.rawValue : Maraca.jsonRpcVersion ?? "2.0",
-            MaracaConstants.Keys.result.rawValue : [
-                MaracaConstants.Keys.handle.rawValue : clientHandle,
-                MaracaConstants.Keys.event.rawValue : [
-                    MaracaConstants.Keys.id.rawValue : 5,
-                    MaracaConstants.Keys.type.rawValue : 5,
-                    MaracaConstants.Keys.value.rawValue : [
-                        MaracaConstants.Keys.data.rawValue : dataAsIntegerArray,
-                        MaracaConstants.Keys.id.rawValue : dataSourceId,
-                        MaracaConstants.Keys.name.rawValue : dataSourceName
-                    ]
-                ]
-            ]
-        ]
-        
-        activeClient.notifyWebpage(with: jsonRpc)
+       sendJSONForDecodedData(decodedData, device: device, result: result)
     }
     
     public func didChangeButtonsState(_ buttonsState: SKTCaptureButtonsState, forDevice device: CaptureHelperDevice) {
@@ -910,6 +788,148 @@ extension Maraca: CaptureHelperAllDelegate {
         activeClient.notifyWebpage(with: jsonRpc)
     }
     
+    
+    
+    
+    
+    private func sendJSONForDeviceArrival(_ device: CaptureHelperDevice, result: SKTResult) {
+        guard let activeClient = activeClient else { return }
+                      
+        guard result == SKTResult.E_NOERROR else {
+          
+            let errorMessage = "There was an error with arrival of the Socket Mobile device manager: \(String(describing: device.deviceInfo.name)). Error: \(result)"
+            let errorResponseJsonRpc = Maraca.constructErrorResponse(error: result,
+                                                                     errorMessage: errorMessage,
+                                                                     handle: activeClient.handle,
+                                                                     responseId: nil)
+          
+            activeClient.notifyWebpage(with: errorResponseJsonRpc)
+            return
+        }
+      
+        guard
+            let deviceName = device.deviceInfo.name?.escaped,
+            let deviceGuid = device.deviceInfo.guid,
+            let clientHandle = activeClient.handle else { return }
+      
+        // Send the deviceArrival to the web app along with its guid
+        // The web app may ignore this, but when it is ready to open
+        // the device, it will send the guid back to Maraca
+        // in order to open this device.
+      
+        let jsonRpc: [String: Any] = [
+            MaracaConstants.Keys.jsonrpc.rawValue : Maraca.jsonRpcVersion ?? "2.0",
+            MaracaConstants.Keys.result.rawValue : [
+                MaracaConstants.Keys.handle.rawValue : clientHandle,
+                MaracaConstants.Keys.event.rawValue : [
+                    MaracaConstants.Keys.id.rawValue : 1,
+                    MaracaConstants.Keys.type.rawValue : 6,
+                    MaracaConstants.Keys.value.rawValue : [
+                        MaracaConstants.Keys.guid.rawValue : deviceGuid,
+                        MaracaConstants.Keys.name.rawValue : deviceName,
+                        MaracaConstants.Keys.type.rawValue : device.deviceInfo.deviceType.rawValue
+                    ]
+                ]
+            ]
+        ]
+      
+        activeClient.notifyWebpage(with: jsonRpc)
+    }
+    
+    private func sendJSONForDeviceRemoval(_ device: CaptureHelperDevice, result: SKTResult) {
+        guard let activeClient = activeClient else { return }
+        
+        guard result == SKTResult.E_NOERROR else {
+            
+            let errorMessage = "There was an error with removal of the Socket Mobile device: \(String(describing: device.deviceInfo.name)). Error: \(result)"
+            let errorResponseJsonRpc = Maraca.constructErrorResponse(error: result,
+                                                                     errorMessage: errorMessage,
+                                                                     handle: activeClient.handle,
+                                                                     responseId: nil)
+            
+            activeClient.notifyWebpage(with: errorResponseJsonRpc)
+            return
+        }
+        
+        guard
+            let deviceName = device.deviceInfo.name?.escaped,
+            let deviceGuid = device.deviceInfo.guid,
+            let clientHandle = activeClient.handle else { return }
+        
+        let jsonRpc: [String: Any] = [
+            MaracaConstants.Keys.jsonrpc.rawValue : Maraca.jsonRpcVersion ?? "2.0",
+            MaracaConstants.Keys.result.rawValue : [
+                MaracaConstants.Keys.handle.rawValue : clientHandle,
+                MaracaConstants.Keys.event.rawValue : [
+                    MaracaConstants.Keys.id.rawValue : 2,
+                    MaracaConstants.Keys.type.rawValue : 6,
+                    MaracaConstants.Keys.value.rawValue : [
+                        MaracaConstants.Keys.guid.rawValue : deviceGuid,
+                        MaracaConstants.Keys.name.rawValue : deviceName,
+                        MaracaConstants.Keys.type.rawValue : device.deviceInfo.deviceType.rawValue
+                    ]
+                ]
+            ]
+        ]
+        
+        activeClient.notifyWebpage(with: jsonRpc)
+    }
+    
+    private func sendJSONForDecodedData(_ decodedData: SKTCaptureDecodedData?, device: CaptureHelperDevice, result: SKTResult) {
+        
+        guard
+            let activeClient = activeClient,
+            let clientHandle = activeClient.handle
+            else { return }
+       
+        guard result == SKTResult.E_NOERROR else {
+           
+            let errorResponseJsonRpc = Maraca.constructErrorResponse(error: result,
+                                                                    errorMessage: "There was an error receiving decoded data from the Socket Mobile device: \(String(describing: device.deviceInfo.name)). Error: \(result)",
+                                                                    handle: activeClient.handle,
+                                                                    responseId: nil)
+           
+            activeClient.notifyWebpage(with: errorResponseJsonRpc)
+            return
+        }
+       
+        guard
+            let deviceGuid = device.deviceInfo.guid,
+            let dataFromDecodedDataStruct = decodedData?.decodedData,
+            let dataSourceName = decodedData?.dataSourceName,
+            let dataSourceId = decodedData?.dataSourceID.rawValue
+            else { return }
+       
+       
+       
+       
+        // Confirm that the ClientDevice has been previously opened
+        // by the active client
+       
+        guard activeClient.hasPreviouslyOpenedDevice(with: deviceGuid) else {
+            return
+        }
+       
+        let dataAsIntegerArray: [UInt8] = [UInt8](dataFromDecodedDataStruct)
+       
+        let jsonRpc: [String: Any] = [
+            MaracaConstants.Keys.jsonrpc.rawValue : Maraca.jsonRpcVersion ?? "2.0",
+            MaracaConstants.Keys.result.rawValue : [
+                MaracaConstants.Keys.handle.rawValue : clientHandle,
+                MaracaConstants.Keys.event.rawValue : [
+                    MaracaConstants.Keys.id.rawValue : 5,
+                    MaracaConstants.Keys.type.rawValue : 5,
+                    MaracaConstants.Keys.value.rawValue : [
+                        MaracaConstants.Keys.data.rawValue : dataAsIntegerArray,
+                        MaracaConstants.Keys.id.rawValue : dataSourceId,
+                        MaracaConstants.Keys.name.rawValue : dataSourceName
+                    ]
+                ]
+            ]
+        ]
+       
+        activeClient.notifyWebpage(with: jsonRpc)
+    }
 }
 
 
