@@ -778,7 +778,7 @@ extension Maraca: CaptureHelperAllDelegate {
                 MaracaConstants.Keys.handle.rawValue : clientHandle,
                 MaracaConstants.Keys.event.rawValue : [
                     MaracaConstants.Keys.id.rawValue : SKTCaptureEventID.buttons.rawValue,
-                    MaracaConstants.Keys.type.rawValue : SKTCapturePropertyType.notApplicable.rawValue,
+                    MaracaConstants.Keys.type.rawValue : SKTCaptureEventDataType.byte.rawValue,
                     MaracaConstants.Keys.value.rawValue : buttonsState.rawValue,
                     
                 ]
@@ -797,7 +797,7 @@ extension Maraca: CaptureHelperAllDelegate {
                       
         guard result == SKTResult.E_NOERROR else {
           
-            let errorMessage = "There was an error with arrival of the Socket Mobile device manager: \(String(describing: device.deviceInfo.name)). Error: \(result)"
+            let errorMessage = "There was an error with arrival of the Socket Mobile device: \(String(describing: device.deviceInfo.name)). Error: \(result)"
             let errorResponseJsonRpc = Maraca.constructErrorResponse(error: result,
                                                                      errorMessage: errorMessage,
                                                                      handle: activeClient.handle,
