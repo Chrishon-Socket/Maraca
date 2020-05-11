@@ -728,7 +728,7 @@ extension Maraca: CaptureHelperAllDelegate {
                 MaracaConstants.Keys.handle.rawValue : clientHandle,
                 MaracaConstants.Keys.event.rawValue : [
                     MaracaConstants.Keys.id.rawValue : SKTCaptureEventID.power.rawValue,
-                    MaracaConstants.Keys.type.rawValue : SKTCapturePropertyType.byte.rawValue,
+                    MaracaConstants.Keys.type.rawValue : SKTCaptureEventDataType.byte.rawValue,
                     MaracaConstants.Keys.value.rawValue : powerState.rawValue
                 ]
             ]
@@ -750,7 +750,7 @@ extension Maraca: CaptureHelperAllDelegate {
                 MaracaConstants.Keys.handle.rawValue : clientHandle,
                 MaracaConstants.Keys.event.rawValue : [
                     MaracaConstants.Keys.id.rawValue : SKTCaptureEventID.batteryLevel.rawValue,
-                    MaracaConstants.Keys.type.rawValue : SKTCapturePropertyType.byte.rawValue,
+                    MaracaConstants.Keys.type.rawValue : SKTCaptureEventDataType.byte.rawValue,
                     MaracaConstants.Keys.value.rawValue : batteryLevel
                 ]
             ]
