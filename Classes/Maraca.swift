@@ -696,23 +696,23 @@ extension Maraca: CaptureHelperAllDelegate {
             }
         }
         
-        sendJSONForDeviceArrival(device, result: result)
+        sendJSONForDeviceArrival(device, result: result, deviceTypeID: SKTCaptureEventID.deviceManagerArrival)
         
     }
     
     public func didNotifyRemovalForDeviceManager(_ device: CaptureHelperDeviceManager, withResult result: SKTResult) {
         
-        sendJSONForDeviceRemoval(device, result: result)
+        sendJSONForDeviceRemoval(device, result: result, deviceTypeID: SKTCaptureEventID.deviceManagerRemoval)
     }
     
     public func didNotifyArrivalForDevice(_ device: CaptureHelperDevice, withResult result: SKTResult) {
         
-        sendJSONForDeviceArrival(device, result: result)
+        sendJSONForDeviceArrival(device, result: result, deviceTypeID: SKTCaptureEventID.deviceArrival)
     }
     
     public func didNotifyRemovalForDevice(_ device: CaptureHelperDevice, withResult result: SKTResult) {
         
-        sendJSONForDeviceRemoval(device, result: result)
+        sendJSONForDeviceRemoval(device, result: result, deviceTypeID: SKTCaptureEventID.deviceRemoval)
     }
     
     public func didChangePowerState(_ powerState: SKTCapturePowerState, forDevice device: CaptureHelperDevice) {
@@ -727,8 +727,8 @@ extension Maraca: CaptureHelperAllDelegate {
             MaracaConstants.Keys.result.rawValue : [
                 MaracaConstants.Keys.handle.rawValue : clientHandle,
                 MaracaConstants.Keys.event.rawValue : [
-                    MaracaConstants.Keys.id.rawValue : 6,
-                    MaracaConstants.Keys.type.rawValue : 5,
+                    MaracaConstants.Keys.id.rawValue : SKTCaptureEventID.power.rawValue,
+                    MaracaConstants.Keys.type.rawValue : SKTCapturePropertyType.byte.rawValue,
                     MaracaConstants.Keys.value.rawValue : powerState.rawValue
                 ]
             ]
@@ -749,8 +749,8 @@ extension Maraca: CaptureHelperAllDelegate {
             MaracaConstants.Keys.result.rawValue : [
                 MaracaConstants.Keys.handle.rawValue : clientHandle,
                 MaracaConstants.Keys.event.rawValue : [
-                    MaracaConstants.Keys.id.rawValue : 8,
-                    MaracaConstants.Keys.type.rawValue : 3,
+                    MaracaConstants.Keys.id.rawValue : SKTCaptureEventID.batteryLevel.rawValue,
+                    MaracaConstants.Keys.type.rawValue : SKTCapturePropertyType.byte.rawValue,
                     MaracaConstants.Keys.value.rawValue : batteryLevel
                 ]
             ]
@@ -777,8 +777,8 @@ extension Maraca: CaptureHelperAllDelegate {
             MaracaConstants.Keys.result.rawValue : [
                 MaracaConstants.Keys.handle.rawValue : clientHandle,
                 MaracaConstants.Keys.event.rawValue : [
-                    MaracaConstants.Keys.id.rawValue : 7,
-                    MaracaConstants.Keys.type.rawValue : 1,
+                    MaracaConstants.Keys.id.rawValue : SKTCaptureEventID.buttons.rawValue,
+                    MaracaConstants.Keys.type.rawValue : SKTCapturePropertyType.notApplicable.rawValue,
                     MaracaConstants.Keys.value.rawValue : buttonsState.rawValue,
                     
                 ]
@@ -792,7 +792,7 @@ extension Maraca: CaptureHelperAllDelegate {
     
     
     
-    private func sendJSONForDeviceArrival(_ device: CaptureHelperDevice, result: SKTResult) {
+    private func sendJSONForDeviceArrival(_ device: CaptureHelperDevice, result: SKTResult, deviceTypeID: SKTCaptureEventID) {
         guard let activeClient = activeClient else { return }
                       
         guard result == SKTResult.E_NOERROR else {
@@ -816,14 +816,14 @@ extension Maraca: CaptureHelperAllDelegate {
         // The web app may ignore this, but when it is ready to open
         // the device, it will send the guid back to Maraca
         // in order to open this device.
-      
+        
         let jsonRpc: [String: Any] = [
             MaracaConstants.Keys.jsonrpc.rawValue : Maraca.jsonRpcVersion ?? "2.0",
             MaracaConstants.Keys.result.rawValue : [
                 MaracaConstants.Keys.handle.rawValue : clientHandle,
                 MaracaConstants.Keys.event.rawValue : [
-                    MaracaConstants.Keys.id.rawValue : 1,
-                    MaracaConstants.Keys.type.rawValue : 6,
+                    MaracaConstants.Keys.id.rawValue : deviceTypeID.rawValue,
+                    MaracaConstants.Keys.type.rawValue : SKTCaptureEventDataType.deviceInfo.rawValue,
                     MaracaConstants.Keys.value.rawValue : [
                         MaracaConstants.Keys.guid.rawValue : deviceGuid,
                         MaracaConstants.Keys.name.rawValue : deviceName,
@@ -836,7 +836,7 @@ extension Maraca: CaptureHelperAllDelegate {
         activeClient.notifyWebpage(with: jsonRpc)
     }
     
-    private func sendJSONForDeviceRemoval(_ device: CaptureHelperDevice, result: SKTResult) {
+    private func sendJSONForDeviceRemoval(_ device: CaptureHelperDevice, result: SKTResult, deviceTypeID: SKTCaptureEventID) {
         guard let activeClient = activeClient else { return }
         
         guard result == SKTResult.E_NOERROR else {
@@ -861,8 +861,8 @@ extension Maraca: CaptureHelperAllDelegate {
             MaracaConstants.Keys.result.rawValue : [
                 MaracaConstants.Keys.handle.rawValue : clientHandle,
                 MaracaConstants.Keys.event.rawValue : [
-                    MaracaConstants.Keys.id.rawValue : 2,
-                    MaracaConstants.Keys.type.rawValue : 6,
+                    MaracaConstants.Keys.id.rawValue : deviceTypeID.rawValue,
+                    MaracaConstants.Keys.type.rawValue : SKTCaptureEventDataType.deviceInfo.rawValue,
                     MaracaConstants.Keys.value.rawValue : [
                         MaracaConstants.Keys.guid.rawValue : deviceGuid,
                         MaracaConstants.Keys.name.rawValue : deviceName,
@@ -917,8 +917,8 @@ extension Maraca: CaptureHelperAllDelegate {
             MaracaConstants.Keys.result.rawValue : [
                 MaracaConstants.Keys.handle.rawValue : clientHandle,
                 MaracaConstants.Keys.event.rawValue : [
-                    MaracaConstants.Keys.id.rawValue : 5,
-                    MaracaConstants.Keys.type.rawValue : 5,
+                    MaracaConstants.Keys.id.rawValue : SKTCaptureEventID.decodedData.rawValue,
+                    MaracaConstants.Keys.type.rawValue : SKTCaptureEventDataType.decodedData.rawValue,
                     MaracaConstants.Keys.value.rawValue : [
                         MaracaConstants.Keys.data.rawValue : dataAsIntegerArray,
                         MaracaConstants.Keys.id.rawValue : dataSourceId,
