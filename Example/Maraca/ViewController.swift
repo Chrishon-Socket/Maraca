@@ -73,7 +73,8 @@ extension ViewController {
             .begin(withAppKey: appKey,
                    appId: appId,
                    developerId: developerId,
-                   completion: { (completed) in
+                   completion: { (result) in
+                    print("result: \(result.rawValue)")
                        self.setupUIElements()
             })
     }
