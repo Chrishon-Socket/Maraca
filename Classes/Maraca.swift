@@ -122,7 +122,7 @@ extension Maraca {
         return self
     }
     
-    public func begin(withAppKey appKey: String, appId: String, developerId: String, completion: ((Bool) -> ())? = nil) {
+    public func begin(withAppKey appKey: String, appId: String, developerId: String, completion: ((SKTResult) -> ())? = nil) {
         
         let AppInfo = SKTAppInfo()
         AppInfo.appKey = appKey
@@ -135,7 +135,7 @@ extension Maraca {
             print("Result of Capture initialization: \(result.rawValue)")
             
             if result == SKTResult.E_NOERROR {
-                completion?(true)
+                completion?(result)
             } else {
 
                 if strongSelf.numberOfFailedOpenCaptureAttempts == 2 {
@@ -145,7 +145,7 @@ extension Maraca {
 
                     // What should we do here in case of this issue?
                     // This is a SKTCapture-specific error
-                    completion?(false)
+                    completion?(result)
                     
                 } else {
 
