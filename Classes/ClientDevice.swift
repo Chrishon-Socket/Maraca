@@ -17,7 +17,9 @@ import SKTCapture
 
 public struct ClientDevice: ClientReceiverProtocol {
     
-    private var captureHelperDevice: CaptureHelperDevice
+    // MARK: - Variables
+    
+    private let captureHelperDevice: CaptureHelperDevice
     
     var guid: String? {
         return captureHelperDevice.deviceInfo.guid
@@ -33,6 +35,12 @@ public struct ClientDevice: ClientReceiverProtocol {
         self.captureHelperDevice = captureHelperDevice
         self.handle = Int(Date().timeIntervalSince1970)
     }
+    
+    
+    
+    
+    
+    
     
     // MARK: - Functions
     

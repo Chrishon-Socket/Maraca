@@ -27,7 +27,6 @@ public class Client: NSObject, ClientReceiverProtocol {
     
     // Keep track of the capture helper devices that this client has opened.
     public private(set) var openedDevices: [ClientDeviceHandle : ClientDevice] = [:]
-    
 }
 
 
@@ -81,10 +80,8 @@ extension Client {
         
         replyToWebpage(with: responseJsonRpc)
         
-        changeOwnership(of: clientDevice, isOwned: true)
+        changeOwnership(forClientDeviceWith: clientDevice.handle, isOwned: true)
     }
-    
-    
     
     public func close(handle: Int, responseId: Int) {
         if handle == self.handle {
@@ -122,15 +119,15 @@ extension Client {
         openedDevices.removeValue(forKey: handle)
     }
     
-    public func changeOwnership(of clientDevice: ClientDevice, isOwned: Bool) {
+    public func changeOwnership(forClientDeviceWith handle: ClientDeviceHandle, isOwned: Bool) {
         
         let responseJson: [String: Any] = [
             MaracaConstants.Keys.jsonrpc.rawValue: Maraca.jsonRpcVersion ?? "2.0",
             MaracaConstants.Keys.result.rawValue: [
-                MaracaConstants.Keys.handle.rawValue: clientDevice.handle,
+                MaracaConstants.Keys.handle.rawValue: handle,
                 MaracaConstants.Keys.event.rawValue: [
-                    MaracaConstants.Keys.id.rawValue: 10,
-                    MaracaConstants.Keys.type.rawValue: 4,
+                    MaracaConstants.Keys.id.rawValue: SKTCaptureEventID.deviceOwnership.rawValue,
+                    MaracaConstants.Keys.type.rawValue: SKTCaptureEventDataType.string.rawValue,
                     MaracaConstants.Keys.value.rawValue: (isOwned ? UUID().uuidString : "00000000-0000-0000-0000-000000000000")
                 ]
             ]

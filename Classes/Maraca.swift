@@ -507,8 +507,28 @@ extension Maraca {
         }
         
         // Confirm that CaptureHelper has still opened the device
-        guard let captureHelperDevice = capture?.getDevices().filter ({ $0.deviceInfo.guid == deviceGUID }).first else {
+        
+        // First, combine all CaptureHelperDevices and CaptureHelperDeviceManagers
+        // into a single array
+        if let deviceManagers = capture?.getDeviceManagers(), let devices = capture?.getDevices() {
+            let allCaptureDevices = deviceManagers + devices
             
+            // Then filter through this combined array to find
+            // the device with this GUID
+            if let captureHelperDevice = allCaptureDevices.filter ({ $0.deviceInfo.guid == deviceGUID }).first {
+                
+                // Finally, open this device
+                client.open(captureHelperDevice: captureHelperDevice, jsonRPCObject: jsonRPCObject)
+                
+                // Change ownership of this device from the previously active client
+                // if that client previously had ownership of this device.
+                guard let clientDevice = previousActiveClient?.getClientDevice(for: captureHelperDevice) else {
+                    return
+                }
+                
+                previousActiveClient?.changeOwnership(forClientDeviceWith: clientDevice.handle, isOwned: false)
+            }
+        } else {
             // The web page is attempting to open a CaptureHelperDevice that
             // is no longer connected.
             // Reply to web page
@@ -518,15 +538,9 @@ extension Maraca {
                                                                      responseId: responseId)
             
             client.replyToWebpage(with: errorResponseJsonRpc)
-            return
         }
         
-        client.open(captureHelperDevice: captureHelperDevice, jsonRPCObject: jsonRPCObject)
         
-        guard let clientDevice = previousActiveClient?.getClientDevice(for: captureHelperDevice) else {
-            return
-        }
-        previousActiveClient?.changeOwnership(of: clientDevice, isOwned: false)
     }
     
     private func close(jsonRPCObject: JsonRPCObject, webview: WKWebView) {
