@@ -7,7 +7,7 @@
 
 import Foundation
 
-public struct JsonRPCObject {
+public struct JsonRPCObject: CustomStringConvertible {
     
     let jsonrpc: String?
     
@@ -45,5 +45,29 @@ public struct JsonRPCObject {
     
     public func getParamsValue(for key: String) -> Any? {
         return params?[key]
+    }
+    
+    public var description: String {
+        var toString: String = ""
+        
+        toString = "JSON RPC version: \(String(describing: jsonrpc))\n"
+        
+        toString = "ID: \(String(describing: id))\n"
+        
+        toString += "Method: \(String(describing: self.method))\n"
+        
+        if let params = params {
+            for (key, value) in params {
+                toString = "Param key: \(key). Value: \(value)\n"
+            }
+        }
+        
+        if let result = result {
+            for (key, value) in result {
+                toString = "Result key: \(key). Value: \(value)\n"
+            }
+        }
+        
+        return toString
     }
 }

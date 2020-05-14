@@ -27,7 +27,7 @@ public class Client: NSObject, ClientReceiverProtocol {
     
     // Keep track of the capture helper devices that this client has opened.
     public private(set) var openedDevices: [ClientDeviceHandle : ClientDevice] = [:]
-    
+    public private(set) var openedDeviceManagers: [ClientDeviceHandle : ClientDeviceManager] = [:]
 }
 
 
@@ -81,10 +81,25 @@ extension Client {
         
         replyToWebpage(with: responseJsonRpc)
         
-        changeOwnership(of: clientDevice, isOwned: true)
+        changeOwnership(forClientDeviceWith: clientDevice.handle, isOwned: true)
     }
     
-    
+    public func open(captureDeviceManager: CaptureHelperDeviceManager, jsonRPCObject: JsonRPCObject) {
+        let clientDeviceManager = ClientDeviceManager(captureHelperDeviceManager: captureDeviceManager)
+        openedDeviceManagers[clientDeviceManager.handle] = clientDeviceManager
+        
+        let responseJsonRpc: [String: Any] = [
+            MaracaConstants.Keys.jsonrpc.rawValue:       jsonRPCObject.jsonrpc ?? "2.0",
+            MaracaConstants.Keys.id.rawValue:            jsonRPCObject.id ?? 2,
+            MaracaConstants.Keys.result.rawValue: [
+                MaracaConstants.Keys.handle.rawValue: clientDeviceManager.handle
+            ]
+        ]
+        
+        replyToWebpage(with: responseJsonRpc)
+        
+        changeOwnership(forClientDeviceWith: clientDeviceManager.handle, isOwned: true)
+    }
     
     public func close(handle: Int, responseId: Int) {
         if handle == self.handle {
@@ -122,12 +137,12 @@ extension Client {
         openedDevices.removeValue(forKey: handle)
     }
     
-    public func changeOwnership(of clientDevice: ClientDevice, isOwned: Bool) {
+    public func changeOwnership(forClientDeviceWith handle: ClientDeviceHandle, isOwned: Bool) {
         
         let responseJson: [String: Any] = [
             MaracaConstants.Keys.jsonrpc.rawValue: Maraca.jsonRpcVersion ?? "2.0",
             MaracaConstants.Keys.result.rawValue: [
-                MaracaConstants.Keys.handle.rawValue: clientDevice.handle,
+                MaracaConstants.Keys.handle.rawValue: handle,
                 MaracaConstants.Keys.event.rawValue: [
                     MaracaConstants.Keys.id.rawValue: 10,
                     MaracaConstants.Keys.type.rawValue: 4,
@@ -158,6 +173,10 @@ extension Client {
             getProperty(property: property, responseId: responseId) { (result) in
                 self.replyToWebpage(with: resultDictionary(result))
             }
+        } else if let _ = openedDeviceManagers[handle] {
+            openedDeviceManagers[handle]?.getProperty(property: property, responseId: responseId, completion: { (result) in
+                self.replyToWebpage(with: resultDictionary(result))
+            })
         } else if let _ = openedDevices[handle] {
             openedDevices[handle]?.getProperty(property: property, responseId: responseId, completion: { (result) in
                 self.replyToWebpage(with: resultDictionary(result))
@@ -186,6 +205,10 @@ extension Client {
             setProperty(property: property, responseId: responseId) { (result) in
                 self.replyToWebpage(with: resultDictionary(result))
             }
+        } else if let _ = openedDeviceManagers[handle] {
+            openedDeviceManagers[handle]?.setProperty(property: property, responseId: responseId, completion: { (result) in
+                self.replyToWebpage(with: resultDictionary(result))
+            })
         } else if let _ = openedDevices[handle] {
             openedDevices[handle]?.setProperty(property: property, responseId: responseId, completion: { (result) in
                 self.replyToWebpage(with: resultDictionary(result))

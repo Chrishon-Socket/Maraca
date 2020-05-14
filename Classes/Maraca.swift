@@ -507,8 +507,20 @@ extension Maraca {
         }
         
         // Confirm that CaptureHelper has still opened the device
-        guard let captureHelperDevice = capture?.getDevices().filter ({ $0.deviceInfo.guid == deviceGUID }).first else {
+        if let captureHelperDeviceManager = capture?.getDeviceManagers().filter ({ $0.deviceInfo.guid == deviceGUID }).first {
             
+            client.open(captureDeviceManager: captureHelperDeviceManager, jsonRPCObject: jsonRPCObject)
+            
+        } else if let captureHelperDevice = capture?.getDevices().filter ({ $0.deviceInfo.guid == deviceGUID }).first {
+            
+            client.open(captureHelperDevice: captureHelperDevice, jsonRPCObject: jsonRPCObject)
+            
+            guard let clientDevice = previousActiveClient?.getClientDevice(for: captureHelperDevice) else {
+                return
+            }
+            previousActiveClient?.changeOwnership(forClientDeviceWith: clientDevice.handle, isOwned: false)
+            
+        } else {
             // The web page is attempting to open a CaptureHelperDevice that
             // is no longer connected.
             // Reply to web page
@@ -518,15 +530,9 @@ extension Maraca {
                                                                      responseId: responseId)
             
             client.replyToWebpage(with: errorResponseJsonRpc)
-            return
         }
         
-        client.open(captureHelperDevice: captureHelperDevice, jsonRPCObject: jsonRPCObject)
         
-        guard let clientDevice = previousActiveClient?.getClientDevice(for: captureHelperDevice) else {
-            return
-        }
-        previousActiveClient?.changeOwnership(of: clientDevice, isOwned: false)
     }
     
     private func close(jsonRPCObject: JsonRPCObject, webview: WKWebView) {

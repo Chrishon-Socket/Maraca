@@ -1,38 +1,35 @@
 //
-//  ClientDevice.swift
+//  ClientDeviceManager.swift
 //  Maraca
 //
-//  Created by Chrishon Wyllie on 11/18/19.
+//  Created by Chrishon Wyllie on 5/14/20.
 //
 
 import Foundation
-import SKTCapture
 
-// Extensions do NOT support computed properties at this time (6/13/19)
-// There's no "CLEAN" way to extend the CaptureHelperDevice
-// with a property that lets us know which Clients have opened it.
-// So, to get around that, this private struct
-// maintains references to which CaptureHelperDevices have
-// been opened by which Client objects
+// Maintains reference to CaptureHelperDeviceManager in similar
+// manner as the ClientDevice struct
 
-public struct ClientDevice: ClientReceiverProtocol {
+public struct ClientDeviceManager: ClientReceiverProtocol {
     
     // MARK: - Variables
     
-    private let captureHelperDevice: CaptureHelperDevice
+    private let captureHelperDeviceManager: CaptureHelperDeviceManager
     
     var guid: String? {
-        return captureHelperDevice.deviceInfo.guid
+        return captureHelperDeviceManager.deviceInfo.guid
     }
     
     let handle: Int
     
     
     
-    // MARK: - Initializers
     
-    init(captureHelperDevice: CaptureHelperDevice) {
-        self.captureHelperDevice = captureHelperDevice
+    
+    
+    // MARK: - Initializers
+    init(captureHelperDeviceManager: CaptureHelperDeviceManager) {
+        self.captureHelperDeviceManager = captureHelperDeviceManager
         self.handle = Int(Date().timeIntervalSince1970)
     }
     
@@ -45,7 +42,7 @@ public struct ClientDevice: ClientReceiverProtocol {
     // MARK: - Functions
     
     public func getProperty(property: SKTCaptureProperty, responseId: Int, completion: @escaping ClientReceiverCompletionHandler) {
-        captureHelperDevice.getProperty(property) { (result, property) in
+        captureHelperDeviceManager.getProperty(property) { (result, property) in
             
             guard result == .E_NOERROR else {
                 
@@ -86,8 +83,7 @@ public struct ClientDevice: ClientReceiverProtocol {
     }
     
     public func setProperty(property: SKTCaptureProperty, responseId: Int, completion: @escaping ClientReceiverCompletionHandler) {
-        
-        captureHelperDevice.setProperty(property) { (result, property) in
+        captureHelperDeviceManager.setProperty(property) { (result, property) in
             
             guard result == .E_NOERROR else {
                 
@@ -105,7 +101,7 @@ public struct ClientDevice: ClientReceiverProtocol {
                 MaracaConstants.Keys.jsonrpc.rawValue : Maraca.jsonRpcVersion ?? "2.0",
                 MaracaConstants.Keys.id.rawValue : responseId,
                 MaracaConstants.Keys.result.rawValue: [
-                    MaracaConstants.Keys.handle.rawValue : self.captureHelperDevice.deviceInfo.guid
+                    MaracaConstants.Keys.handle.rawValue : self.captureHelperDeviceManager.deviceInfo.guid
                     // We might send the property back as well.
                 ]
             ]
@@ -113,4 +109,5 @@ public struct ClientDevice: ClientReceiverProtocol {
             completion(.success(jsonRpc))
         }
     }
+    
 }
