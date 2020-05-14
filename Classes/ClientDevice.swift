@@ -102,7 +102,7 @@ public struct ClientDevice: ClientReceiverProtocol {
             }
             
             let jsonRpc: [String : Any] = [
-                MaracaConstants.Keys.jsonrpc.rawValue : Maraca.jsonRpcVersion ?? "2.0",
+                MaracaConstants.Keys.jsonrpc.rawValue : Maraca.jsonRpcVersion ?? Maraca.defaultJsonRpcVersion,
                 MaracaConstants.Keys.id.rawValue : responseId,
                 MaracaConstants.Keys.result.rawValue: [
                     MaracaConstants.Keys.handle.rawValue : self.captureHelperDevice.deviceInfo.guid

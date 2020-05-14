@@ -17,6 +17,7 @@ import WebKit.WKScriptMessage
     @objc optional func maraca(_ maraca: Maraca, webviewDidOpenCaptureWith client: Client)
     @objc optional func maraca(_ maraca: Maraca, webviewDidCloseCaptureWith client: Client)
     func maraca(_ maraca: Maraca, didReceive scriptMessage: WKScriptMessage)
+    @objc optional func maraca(_ maraca: Maraca, batteryLevelDidChange value: Int, for device: CaptureHelperDevice)
 }
 
 
@@ -272,7 +273,7 @@ extension SKTCaptureProperty {
         }
         
         let jsonRpc: [String : Any] = [
-            MaracaConstants.Keys.jsonrpc.rawValue : Maraca.jsonRpcVersion ?? "2.0",
+            MaracaConstants.Keys.jsonrpc.rawValue : Maraca.jsonRpcVersion ?? Maraca.defaultJsonRpcVersion,
             MaracaConstants.Keys.id.rawValue : responseId,
             MaracaConstants.Keys.result.rawValue: [
                 MaracaConstants.Keys.property.rawValue : [

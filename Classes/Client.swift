@@ -15,6 +15,17 @@ public class Client: NSObject, ClientReceiverProtocol {
     
     public private(set) var handle: ClientHandle!
     
+    // Used to denote which client currently has active
+    // ownership of BLE devices
+    public let ownershipId: String = UUID().uuidString
+    
+    public static var disownedBlankId: String {
+        // If this client does not have ownership, a
+        // "blank" UUID string will be sent to the web
+        // app using CaptureJS
+        return "00000000-0000-0000-0000-000000000000"
+    }
+    
     private var appInfo: SKTAppInfo?
     
     // This is used to identify/retrieve a client with a webview
@@ -71,7 +82,7 @@ extension Client {
         openedDevices[clientDevice.handle] = clientDevice
         
         let responseJsonRpc: [String: Any] = [
-            MaracaConstants.Keys.jsonrpc.rawValue:       jsonRPCObject.jsonrpc ?? "2.0",
+            MaracaConstants.Keys.jsonrpc.rawValue:       jsonRPCObject.jsonrpc ?? Maraca.defaultJsonRpcVersion,
             MaracaConstants.Keys.id.rawValue:            jsonRPCObject.id ?? 2,
             MaracaConstants.Keys.result.rawValue: [
                 MaracaConstants.Keys.handle.rawValue: clientDevice.handle
@@ -91,7 +102,7 @@ extension Client {
         }
         
         let responseJsonRpc: [String:  Any] = [
-            MaracaConstants.Keys.jsonrpc.rawValue: Maraca.jsonRpcVersion ?? "2.0",
+            MaracaConstants.Keys.jsonrpc.rawValue: Maraca.jsonRpcVersion ?? Maraca.defaultJsonRpcVersion,
             MaracaConstants.Keys.id.rawValue: responseId,
             MaracaConstants.Keys.result.rawValue: 0
         ]
@@ -122,13 +133,13 @@ extension Client {
     public func changeOwnership(forClientDeviceWith handle: ClientDeviceHandle, isOwned: Bool) {
         
         let responseJson: [String: Any] = [
-            MaracaConstants.Keys.jsonrpc.rawValue: Maraca.jsonRpcVersion ?? "2.0",
+            MaracaConstants.Keys.jsonrpc.rawValue: Maraca.jsonRpcVersion ?? Maraca.defaultJsonRpcVersion,
             MaracaConstants.Keys.result.rawValue: [
                 MaracaConstants.Keys.handle.rawValue: handle,
                 MaracaConstants.Keys.event.rawValue: [
                     MaracaConstants.Keys.id.rawValue: SKTCaptureEventID.deviceOwnership.rawValue,
                     MaracaConstants.Keys.type.rawValue: SKTCaptureEventDataType.string.rawValue,
-                    MaracaConstants.Keys.value.rawValue: (isOwned ? UUID().uuidString : "00000000-0000-0000-0000-000000000000")
+                    MaracaConstants.Keys.value.rawValue: (isOwned ? self.ownershipId : Client.disownedBlankId)
                 ]
             ]
         ]
@@ -264,7 +275,7 @@ extension Client {
             }
             
             let jsonRpc: [String : Any] = [
-                MaracaConstants.Keys.jsonrpc.rawValue : Maraca.jsonRpcVersion ?? "2.0",
+                MaracaConstants.Keys.jsonrpc.rawValue : Maraca.jsonRpcVersion ?? Maraca.defaultJsonRpcVersion,
                 MaracaConstants.Keys.id.rawValue : responseId,
                 MaracaConstants.Keys.result.rawValue: [
                     MaracaConstants.Keys.handle.rawValue : self.handle

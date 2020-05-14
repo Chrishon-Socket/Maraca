@@ -33,6 +33,7 @@ public final class Maraca: NSObject {
     // version that the web page specifies
     public private(set) static var jsonRpcVersion: String?
     
+    public static let defaultJsonRpcVersion: String = "2.0"
     
     
     
@@ -408,7 +409,7 @@ extension Maraca {
             switch result {
             case .success(let client):
                 let responseJsonRpc: [String: Any] = [
-                    MaracaConstants.Keys.jsonrpc.rawValue:   jsonRPCObject.jsonrpc ?? "2.0",
+                    MaracaConstants.Keys.jsonrpc.rawValue:   jsonRPCObject.jsonrpc ?? Maraca.defaultJsonRpcVersion,
                     // The spec says "transport-openclient" but the id is expected to be an integer
                     MaracaConstants.Keys.id.rawValue:        jsonRPCObject.id ?? "transport-openclient",
                     MaracaConstants.Keys.result.rawValue: [
@@ -716,7 +717,7 @@ extension Maraca: CaptureHelperAllDelegate {
         else { return }
         
         let jsonRpc: [String: Any] = [
-            MaracaConstants.Keys.jsonrpc.rawValue : Maraca.jsonRpcVersion ?? "2.0",
+            MaracaConstants.Keys.jsonrpc.rawValue : Maraca.jsonRpcVersion ?? Maraca.defaultJsonRpcVersion,
             MaracaConstants.Keys.result.rawValue : [
                 MaracaConstants.Keys.handle.rawValue : clientHandle,
                 MaracaConstants.Keys.event.rawValue : [
@@ -732,13 +733,15 @@ extension Maraca: CaptureHelperAllDelegate {
     
     public func didChangeBatteryLevel(_ batteryLevel: Int, forDevice device: CaptureHelperDevice) {
         
+        delegate?.maraca?(self, batteryLevelDidChange: batteryLevel, for: device)
+        
         guard
             let activeClient = activeClient,
             let clientHandle = activeClient.handle
         else { return }
         
         let jsonRpc: [String: Any] = [
-            MaracaConstants.Keys.jsonrpc.rawValue : Maraca.jsonRpcVersion ?? "2.0",
+            MaracaConstants.Keys.jsonrpc.rawValue : Maraca.jsonRpcVersion ?? Maraca.defaultJsonRpcVersion,
             MaracaConstants.Keys.result.rawValue : [
                 MaracaConstants.Keys.handle.rawValue : clientHandle,
                 MaracaConstants.Keys.event.rawValue : [
@@ -766,7 +769,7 @@ extension Maraca: CaptureHelperAllDelegate {
         else { return }
         
         let jsonRpc: [String: Any] = [
-            MaracaConstants.Keys.jsonrpc.rawValue : Maraca.jsonRpcVersion ?? "2.0",
+            MaracaConstants.Keys.jsonrpc.rawValue : Maraca.jsonRpcVersion ?? Maraca.defaultJsonRpcVersion,
             MaracaConstants.Keys.result.rawValue : [
                 MaracaConstants.Keys.handle.rawValue : clientHandle,
                 MaracaConstants.Keys.event.rawValue : [
@@ -815,7 +818,7 @@ extension Maraca: CaptureHelperAllDelegate {
         // in order to open this device.
         
         let jsonRpc: [String: Any] = [
-            MaracaConstants.Keys.jsonrpc.rawValue : Maraca.jsonRpcVersion ?? "2.0",
+            MaracaConstants.Keys.jsonrpc.rawValue : Maraca.jsonRpcVersion ?? Maraca.defaultJsonRpcVersion,
             MaracaConstants.Keys.result.rawValue : [
                 MaracaConstants.Keys.handle.rawValue : clientHandle,
                 MaracaConstants.Keys.event.rawValue : [
@@ -871,7 +874,7 @@ extension Maraca: CaptureHelperAllDelegate {
         let dataAsIntegerArray: [UInt8] = [UInt8](dataFromDecodedDataStruct)
        
         let jsonRpc: [String: Any] = [
-            MaracaConstants.Keys.jsonrpc.rawValue : Maraca.jsonRpcVersion ?? "2.0",
+            MaracaConstants.Keys.jsonrpc.rawValue : Maraca.jsonRpcVersion ?? Maraca.defaultJsonRpcVersion,
             MaracaConstants.Keys.result.rawValue : [
                 MaracaConstants.Keys.handle.rawValue : clientHandle,
                 MaracaConstants.Keys.event.rawValue : [
@@ -1007,7 +1010,7 @@ extension Maraca {
     public static func constructErrorResponse(error: SKTResult, errorMessage: String, handle: Int?, responseId: Int?) -> [String: Any] {
         
         let responseJsonRpc: [String: Any] = [
-            MaracaConstants.Keys.jsonrpc.rawValue:  Maraca.jsonRpcVersion ?? "2.0",
+            MaracaConstants.Keys.jsonrpc.rawValue:  Maraca.jsonRpcVersion ?? Maraca.defaultJsonRpcVersion,
             MaracaConstants.Keys.id.rawValue:       responseId ?? 6,
             MaracaConstants.Keys.error.rawValue: [
                 MaracaConstants.Keys.code.rawValue: error.rawValue,
