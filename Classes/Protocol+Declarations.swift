@@ -14,9 +14,44 @@ import WebKit.WKScriptMessage
 
 /// Public optional delegate used by Maraca class.
 @objc public protocol MaracaDelegate: class {
+    
+    /// Notifies the delegate that a CaptureHelper device has been connected
+    /// Use this to refresh UI in iOS application
+    ///
+    /// Even if using Maraca and SKTCapture simultaneously, this function will
+    /// only be called once, depending on which entity is set as the Capture delegate.
+    @objc optional func maraca(_ maraca: Maraca, didNotifyArrivalFor device: CaptureHelperDevice, result: SKTResult)
+    
+    /// Notifies the delegate that a CaptureHelper device has been disconnected
+    /// Use this to refresh UI in iOS application
+    ///
+    /// Even if using Maraca and SKTCapture simultaneously, this function will
+    /// only be called once, depending on which entity is set as the Capture delegate.
+    @objc optional func maraca(_ maraca: Maraca, didNotifyRemovalFor device: CaptureHelperDevice, result: SKTResult)
+    
+    /// Notifies the delegate that the battery level of aa CaptureHelperDevice has changed
+    /// Use this to refresh UI in iOS application
+    ///
+    /// Even if using Maraca and SKTCapture simultaneously, this function will
+    /// only be called once, depending on which entity is set as the Capture delegate.
+    @objc optional func maraca(_ maraca: Maraca, batteryLevelDidChange value: Int, for device: CaptureHelperDevice)
+    
+    /// Notifies the delegate that a new Client (which represents a web application using CaptureJS)
+    /// has been opened
     @objc optional func maraca(_ maraca: Maraca, webviewDidOpenCaptureWith client: Client)
+    
+    /// Notifies the delegate that a Client (which represents a web application using CaptureJS)
+    /// has been closed
     @objc optional func maraca(_ maraca: Maraca, webviewDidCloseCaptureWith client: Client)
+    
+    /// Notifies the delegate that a script message has been received
+    /// that is not related to Maraca.
+    ///
+    /// This delegate function is only called if custom Javascript Message Handlers
+    /// are provided during initialization in this function:
+    /// `observeJavascriptMessageHandlers(_ customMessageHandlers: [String]? = nil)`
     func maraca(_ maraca: Maraca, didReceive scriptMessage: WKScriptMessage)
+    
 }
 
 
@@ -272,7 +307,7 @@ extension SKTCaptureProperty {
         }
         
         let jsonRpc: [String : Any] = [
-            MaracaConstants.Keys.jsonrpc.rawValue : Maraca.jsonRpcVersion ?? "2.0",
+            MaracaConstants.Keys.jsonrpc.rawValue : Maraca.jsonRpcVersion ?? Maraca.defaultJsonRpcVersion,
             MaracaConstants.Keys.id.rawValue : responseId,
             MaracaConstants.Keys.result.rawValue: [
                 MaracaConstants.Keys.property.rawValue : [
