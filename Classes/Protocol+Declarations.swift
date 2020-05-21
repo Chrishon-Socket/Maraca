@@ -17,6 +17,8 @@ import WebKit.WKScriptMessage
     @objc optional func maraca(_ maraca: Maraca, webviewDidOpenCaptureWith client: Client)
     @objc optional func maraca(_ maraca: Maraca, webviewDidCloseCaptureWith client: Client)
     func maraca(_ maraca: Maraca, didReceive scriptMessage: WKScriptMessage)
+    @objc optional func maraca(_ maraca: Maraca, didNotifyArrivalFor device: CaptureHelperDevice, result: SKTResult)
+    @objc optional func maraca(_ maraca: Maraca, didNotifyRemovalFor device: CaptureHelperDevice, result: SKTResult)
     @objc optional func maraca(_ maraca: Maraca, batteryLevelDidChange value: Int, for device: CaptureHelperDevice)
 }
 

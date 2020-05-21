@@ -701,10 +701,14 @@ extension Maraca: CaptureHelperAllDelegate {
     
     public func didNotifyArrivalForDevice(_ device: CaptureHelperDevice, withResult result: SKTResult) {
         
+        delegate?.maraca?(self, didNotifyArrivalFor: device, result: result)
+        
         sendJSONForDevicePresence(device, result: result, deviceTypeID: SKTCaptureEventID.deviceArrival)
     }
     
     public func didNotifyRemovalForDevice(_ device: CaptureHelperDevice, withResult result: SKTResult) {
+        
+        delegate?.maraca?(self, didNotifyRemovalFor: device, result: result)
         
         sendJSONForDevicePresence(device, result: result, deviceTypeID: SKTCaptureEventID.deviceRemoval)
     }
