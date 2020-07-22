@@ -12,44 +12,85 @@ import WebKit.WKScriptMessage
 // enums and utility structs used within Maraca
 
 
+// MARK: - MaracaDelegate
+
 /// Public optional delegate used by Maraca class.
 @objc public protocol MaracaDelegate: class {
     
-    /// Notifies the delegate that a CaptureHelper device has been connected
-    /// Use this to refresh UI in iOS application
-    ///
-    /// Even if using Maraca and SKTCapture simultaneously, this function will
-    /// only be called once, depending on which entity is set as the Capture delegate.
+    /**
+    Notifies the delegate that a CaptureHelper device has been connected
+    Use this to refresh UI in iOS application
+     
+    Even if using Maraca and SKTCapture simultaneously, this function will
+    only be called once, depending on which entity is set as the Capture delegate.
+     
+     - Parameters:
+        - maraca: The Maraca object
+        - device: Wrapper for the actual Bluetooth device
+        - result: The result and/or possible error code for the notification
+     */
     @objc optional func maraca(_ maraca: Maraca, didNotifyArrivalFor device: CaptureHelperDevice, result: SKTResult)
     
-    /// Notifies the delegate that a CaptureHelper device has been disconnected
-    /// Use this to refresh UI in iOS application
-    ///
-    /// Even if using Maraca and SKTCapture simultaneously, this function will
-    /// only be called once, depending on which entity is set as the Capture delegate.
+    /**
+     Notifies the delegate that a CaptureHelper device has been disconnected
+     Use this to refresh UI in iOS application
+     
+     Even if using Maraca and SKTCapture simultaneously, this function will
+     only be called once, depending on which entity is set as the Capture delegate.
+     
+     - Parameters:
+         - maraca: The Maraca object
+         - device: Wrapper for the actual Bluetooth device
+         - result: The result and/or possible error code for the notification
+     */
     @objc optional func maraca(_ maraca: Maraca, didNotifyRemovalFor device: CaptureHelperDevice, result: SKTResult)
     
-    /// Notifies the delegate that the battery level of aa CaptureHelperDevice has changed
-    /// Use this to refresh UI in iOS application
-    ///
-    /// Even if using Maraca and SKTCapture simultaneously, this function will
-    /// only be called once, depending on which entity is set as the Capture delegate.
+    /**
+     Notifies the delegate that the battery level of aa CaptureHelperDevice has changed
+     Use this to refresh UI in iOS application
+     
+     Even if using Maraca and SKTCapture simultaneously, this function will
+     only be called once, depending on which entity is set as the Capture delegate.
+     
+     - Parameters:
+         - maraca: The Maraca object
+         - value: Current battery level for the device
+         - device: Wrapper for the actual Bluetooth device
+     */
     @objc optional func maraca(_ maraca: Maraca, batteryLevelDidChange value: Int, for device: CaptureHelperDevice)
     
-    /// Notifies the delegate that a new Client (which represents a web application using CaptureJS)
-    /// has been opened
+    /**
+     Notifies the delegate that a new Client (which represents a web application using CaptureJS)
+     has been opened
+     
+     - Parameters:
+         - maraca: The Maraca object
+         - client: Object used to represent the current web application page using CaptureJS
+     */
     @objc optional func maraca(_ maraca: Maraca, webviewDidOpenCaptureWith client: Client)
     
-    /// Notifies the delegate that a Client (which represents a web application using CaptureJS)
-    /// has been closed
+    /**
+     Notifies the delegate that a Client (which represents a web application using CaptureJS)
+     has been closed
+     
+     - Parameters:
+         - maraca: The Maraca object
+         - client: Object used to represent the current web application page using CaptureJS
+     */
     @objc optional func maraca(_ maraca: Maraca, webviewDidCloseCaptureWith client: Client)
     
-    /// Notifies the delegate that a script message has been received
-    /// that is not related to Maraca.
-    ///
-    /// This delegate function is only called if custom Javascript Message Handlers
-    /// are provided during initialization in this function:
-    /// `observeJavascriptMessageHandlers(_ customMessageHandlers: [String]? = nil)`
+    /**
+     Notifies the delegate that a script message has been received
+     that is not related to Maraca.
+     
+     This delegate function is only called if custom Javascript Message Handlers
+     are provided during initialization in this function:
+     `observeJavascriptMessageHandlers(_ customMessageHandlers: [String]? = nil)`
+     
+     - Parameters:
+         - maraca: The Maraca object
+         - scriptMessage: A WKScriptMessage object contains information about a message sent from a webpage.
+     */
     func maraca(_ maraca: Maraca, didReceive scriptMessage: WKScriptMessage)
     
 }
@@ -121,6 +162,7 @@ public struct ErrorResponse: ErrorResponseProtocol {
 
 
 
+// MARK: - MaracaError
 
 /// Errors that are thrown during the conversion of an
 /// SKTProperty to a json dictionary
@@ -182,7 +224,7 @@ public typealias ClientDeviceHandle = Int
 
 
 
-
+// MARK: - String
 
 extension String {
     // In some cases, data returned from a CaptureHelperDevice will contain
