@@ -23,7 +23,11 @@ public final class Maraca: NSObject {
     
     public private(set) var clientsList: [ClientHandle : Client] = [:]
     
-    public private(set) var activeClient: Client?
+    public private(set) var activeClient: Client? {
+        didSet {
+            activeClientManager.update(activeClient: activeClient)
+        }
+    }
     public private(set) var activeClientIndexPath: IndexPath?
     
     public private(set) var previousActiveClient: Client?
@@ -52,7 +56,7 @@ public final class Maraca: NSObject {
         case setProperty = "setproperty"
     }
     
-    private var captureLayer: SKTCaptureLayer!
+    private lazy var activeClientManager = ActiveClientManager(delegate: self)
     
     
     
@@ -148,7 +152,6 @@ extension Maraca {
             DebugLogger.shared.addDebugMessage("\(String(describing: type(of: strongSelf))) - Result of Capture initialization: \(result.rawValue)")
             
             if result == SKTResult.E_NOERROR {
-                strongSelf.captureLayer = strongSelf.setupCaptureLayer()
                 completion?(result)
             } else {
 
@@ -681,85 +684,20 @@ extension Maraca {
 
 
 
-
-// MARK: - CaptureHelper delegation
-
-extension Maraca {
+extension Maraca: ActiveClientManagerDelegate {
     
-    private func setupCaptureLayer() -> SKTCaptureLayer {
-        
-        let captureLayer = SKTCaptureLayer()
-        
-        captureLayer.errorEventHandler = { [weak self] (error) in
-            guard let activeClient = self?.activeClient else { return }
-            captureLayer.sendJSONForError(activeClient: activeClient, error: error)
-        }
-        captureLayer.deviceManagerArrivalHandler = { [weak self] (deviceManager, result) in
-            guard let activeClient = self?.activeClient else { return }
-            captureLayer.sendJSONForDevicePresence(activeClient: activeClient,
-                                                   device: deviceManager,
-                                                   result: result,
-                                                   deviceTypeID: SKTCaptureEventID.deviceManagerArrival)
-        }
-        captureLayer.deviceManagerRemovalHandler = { [weak self] (deviceManager, result) in
-            guard let activeClient = self?.activeClient else { return }
-            captureLayer.sendJSONForDevicePresence(activeClient: activeClient,
-                                                   device: deviceManager,
-                                                   result: result,
-                                                   deviceTypeID: SKTCaptureEventID.deviceManagerRemoval)
-        }
-        captureLayer.deviceArrivalHandler = { [weak self] (device, result) in
-            guard let strongSelf = self else { return }
-            guard let activeClient = strongSelf.activeClient else { return }
-            strongSelf.delegate?.maraca?(strongSelf, didNotifyArrivalFor: device, result: result)
-            
-            captureLayer.sendJSONForDevicePresence(activeClient: activeClient,
-                                                   device: device,
-                                                   result: result,
-                                                   deviceTypeID: SKTCaptureEventID.deviceArrival)
-        }
-        captureLayer.deviceRemovalHandler = { [weak self] (device, result) in
-            guard let strongSelf = self else { return }
-            guard let activeClient = strongSelf.activeClient else { return }
-            strongSelf.delegate?.maraca?(strongSelf, didNotifyRemovalFor: device, result: result)
-            
-            captureLayer.sendJSONForDevicePresence(activeClient: activeClient,
-                                                   device: device,
-                                                   result: result,
-                                                   deviceTypeID: SKTCaptureEventID.deviceRemoval)
-        }
-        captureLayer.powerStateHandler = { [weak self] (powerState, device) in
-            guard let activeClient = self?.activeClient else { return }
-            captureLayer.sendJSONForPowerState(activeClient: activeClient, powerState: powerState)
-        }
-        captureLayer.batteryLevelChangeHandler = { [weak self] (batteryLevel, device) in
-            guard let strongSelf = self else { return }
-            
-            strongSelf.delegate?.maraca?(strongSelf, batteryLevelDidChange: batteryLevel, for: device)
-            
-            guard let activeClient = strongSelf.activeClient else { return }
-            captureLayer.sendJSONForBatteryLevelChange(activeClient: activeClient, batteryLevel: batteryLevel)
-        }
-        captureLayer.captureDataHandler = { [weak self] (decodedData, device, result) in
-            guard let activeClient = self?.activeClient else { return }
-            captureLayer.sendJSONForDecodedData(activeClient: activeClient,
-                                                decodedData: decodedData,
-                                                device: device,
-                                                result: result)
-        }
-        captureLayer.buttonsStateHandler = { [weak self] (buttonsState, device) in
-            guard let activeClient = self?.activeClient else { return }
-            captureLayer.sendJSONForButtonsState(activeClient: activeClient, buttonsState: buttonsState, device: device)
-        }
-        return captureLayer
+    func activeClient(_ manager: ActiveClientManager, didNotifyArrivalFor device: CaptureHelperDevice, result: SKTResult) {
+        delegate?.maraca?(self, didNotifyArrivalFor: device, result: result)
+    }
+    
+    func activeClient(_ manager: ActiveClientManager, didNotifyRemovalFor device: CaptureHelperDevice, result: SKTResult) {
+        delegate?.maraca?(self, didNotifyRemovalFor: device, result: result)
+    }
+    
+    func activeClient(_ manager: ActiveClientManager, batteryLevelDidChange value: Int, for device: CaptureHelperDevice) {
+        delegate?.maraca?(self, batteryLevelDidChange: value, for: device)
     }
 }
-
-
-
-
-
-
 
 
 
@@ -819,7 +757,7 @@ extension Maraca {
     
     /// Re-assumes SKTCapture layer delegate
     public func assumeCaptureDelegate() {
-        capture?.pushDelegate(captureLayer)
+        capture?.pushDelegate(activeClientManager.captureDelegate)
     }
     
     /// Resigns SKTCapture layer delegate to desired receiver

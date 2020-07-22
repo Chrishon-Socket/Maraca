@@ -7,7 +7,10 @@
 
 import SKTCapture
 
+/// Manages relations between the currently active Client object and the web application it represents
 class ActiveClientManager: NSObject {
+    
+    // MARK: - Variables
     
     private(set) var activeClient: Client?
     
@@ -15,9 +18,14 @@ class ActiveClientManager: NSObject {
     
     private weak var delegate: ActiveClientManagerDelegate?
     
-    internal func update(activeClient: Client?) {
-        self.activeClient = activeClient
+    var captureDelegate: CaptureHelperAllDelegate {
+        return captureLayer
     }
+    
+    
+    
+    
+    // MARK: - Initializers
     
     init(delegate: ActiveClientManagerDelegate?) {
         super.init()
@@ -25,8 +33,13 @@ class ActiveClientManager: NSObject {
         captureLayer = setupCaptureLayer()
     }
     
-    var captureDelegate: CaptureHelperAllDelegate {
-        return captureLayer
+    
+    
+    
+    // MARK: - Functions
+    
+    internal func update(activeClient: Client?) {
+        self.activeClient = activeClient
     }
     
     private func setupCaptureLayer() -> SKTCaptureLayer {
@@ -96,47 +109,4 @@ class ActiveClientManager: NSObject {
         }
         return captureLayer
     }
-}
-
-
-
-
-
-
-
-
-
-
-
-
-@objc internal protocol ActiveClientManagerDelegate: class {
-    @objc optional func activeClient(_ manager: ActiveClientManager, didNotifyArrivalFor device: CaptureHelperDevice, result: SKTResult)
-    
-    /**
-     Notifies the delegate that a CaptureHelper device has been disconnected
-     Use this to refresh UI in iOS application
-     
-     Even if using Maraca and SKTCapture simultaneously, this function will
-     only be called once, depending on which entity is set as the Capture delegate.
-     
-     - Parameters:
-         - maraca: The Maraca object
-         - device: Wrapper for the actual Bluetooth device
-         - result: The result and/or possible error code for the notification
-     */
-    @objc optional func activeClient(_ manager: ActiveClientManager, didNotifyRemovalFor device: CaptureHelperDevice, result: SKTResult)
-    
-    /**
-     Notifies the delegate that the battery level of aa CaptureHelperDevice has changed
-     Use this to refresh UI in iOS application
-     
-     Even if using Maraca and SKTCapture simultaneously, this function will
-     only be called once, depending on which entity is set as the Capture delegate.
-     
-     - Parameters:
-         - maraca: The Maraca object
-         - value: Current battery level for the device
-         - device: Wrapper for the actual Bluetooth device
-     */
-    @objc optional func activeClient(_ manager: ActiveClientManager, batteryLevelDidChange value: Int, for device: CaptureHelperDevice)
 }

@@ -227,6 +227,65 @@ internal enum MaracaError: Error {
 
 
 
+// MARK: - ActiveClientManagerDelegate
+
+@objc internal protocol ActiveClientManagerDelegate: class {
+    
+    /**
+    Notifies the delegate that a CaptureHelper device has been connected
+    Use this to refresh UI in iOS application
+     
+    Even if using Maraca and SKTCapture simultaneously, this function will
+    only be called once, depending on which entity is set as the Capture delegate.
+     
+     - Parameters:
+        - maraca: The ActiveClientManager object
+        - device: Wrapper for the actual Bluetooth device
+        - result: The result and/or possible error code for the notification
+     */
+    @objc optional func activeClient(_ manager: ActiveClientManager, didNotifyArrivalFor device: CaptureHelperDevice, result: SKTResult)
+    
+    /**
+     Notifies the delegate that a CaptureHelper device has been disconnected
+     Use this to refresh UI in iOS application
+     
+     Even if using Maraca and SKTCapture simultaneously, this function will
+     only be called once, depending on which entity is set as the Capture delegate.
+     
+     - Parameters:
+         - maraca: The ActiveClientManager object
+         - device: Wrapper for the actual Bluetooth device
+         - result: The result and/or possible error code for the notification
+     */
+    @objc optional func activeClient(_ manager: ActiveClientManager, didNotifyRemovalFor device: CaptureHelperDevice, result: SKTResult)
+    
+    /**
+     Notifies the delegate that the battery level of aa CaptureHelperDevice has changed
+     Use this to refresh UI in iOS application
+     
+     Even if using Maraca and SKTCapture simultaneously, this function will
+     only be called once, depending on which entity is set as the Capture delegate.
+     
+     - Parameters:
+         - maraca: The ActiveClientManager object
+         - value: Current battery level for the device
+         - device: Wrapper for the actual Bluetooth device
+     */
+    @objc optional func activeClient(_ manager: ActiveClientManager, batteryLevelDidChange value: Int, for device: CaptureHelperDevice)
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
 /// unique identifier for a ClientDevice. The value will be the integer value of:
 /// "The interval between the date value and 00:00:00 UTC on 1 January 1970."
 public typealias ClientDeviceHandle = Int
