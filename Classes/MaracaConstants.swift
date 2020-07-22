@@ -63,4 +63,11 @@ struct MaracaConstants {
         static let favoritesAll: String = "*"
     }
     
+    struct DebugMode {
+        
+        private init() {}
+        
+        static let debugModeActivatedKey: String = "com.socketmobile.maraca.userdefaultskey.debug-mode.is-activated"
+    }
+    
 }

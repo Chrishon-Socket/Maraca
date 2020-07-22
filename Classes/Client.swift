@@ -177,7 +177,7 @@ extension Client {
                                                                      errorMessage: errorMessage,
                                                                      handle: handle,
                                                                      responseId: responseId)
-            print("error response json rpc: \(errorResponseJsonRpc)")
+            DebugLogger.shared.addDebugMessage("\(String(describing: type(of: self))) - error response json rpc: \(errorResponseJsonRpc)")
             self.replyToWebpage(with: errorResponseJsonRpc)
         }
     }
@@ -244,7 +244,7 @@ extension Client {
                 let jsonFromGetProperty = try unwrappedProperty.jsonFromGetProperty(with: responseId)
                 completion(.success(jsonFromGetProperty))
             } catch let error {
-                print("Error converting SKTCaptureProperty to a dictionary: \(error)")
+                DebugLogger.shared.addDebugMessage("\(String(describing: type(of: self))) - Error converting SKTCaptureProperty to a dictionary: \(error)")
                 
                 // Send an error response Json back to the web page
                 // if a dictionary cannot be constructed from
@@ -376,10 +376,9 @@ extension Client {
         
         webview?.evaluateJavaScript(javascript, completionHandler: { (object, error) in
             if let error = error {
-                print("\nerror when calling \(javascript)")
-                print("Error: \(error)\n")
+                DebugLogger.shared.addDebugMessage("\(String(describing: type(of: self))) - error evaluating javascript expression: \(javascript). Error: \(error)\n")
             } else {
-                print("\nscript \(javascript) completed\n")
+                DebugLogger.shared.addDebugMessage("\(String(describing: type(of: self))) - Success evaluating javascript expression: \(javascript)\n")
             }
         })
     }
