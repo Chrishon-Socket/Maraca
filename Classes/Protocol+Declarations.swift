@@ -221,9 +221,7 @@ internal enum MaracaError: Error {
 
 
 
-/// unique identifier for a Client. The value will be the integer value of:
-/// "The interval between the date value and 00:00:00 UTC on 1 January 1970."
-public typealias ClientHandle = Int
+
 
 
 
@@ -503,4 +501,44 @@ extension SKTCaptureProperty {
         default: break
         }
     }
+}
+
+
+
+
+
+
+
+
+
+/// unique identifier for a Client. The value will be the integer value of
+/// the interval between 00:00:00 UTC on 1 January 1970 and the current date
+public typealias ClientHandle = Int
+
+// MARK: - ClientConformanceProtocol
+
+internal protocol ClientConformanceProtocol where Self: Client {
+    
+    /// Unique identifier for client
+    var handle: ClientHandle! { get }
+    
+    /// Used to denote which client currently has active ownership of BLE devices
+    var ownershipId: String { get }
+    
+    var appInfo: SKTAppInfo? { get }
+    
+    /// Used to identify/retrieve a client with a webview
+    var webpageURLString: String? { get }
+    
+    /// Webview used to send and receive data to the current web application page using CaptureJS
+    var webview: WKWebView? { get }
+    
+    /// Returns whether this Client has opened Capture
+    var didOpenCapture: Bool { get }
+    
+    /// Keeps track of the capture helper devices that this client has opened.
+    var openedDevices: [ClientDeviceHandle : ClientDevice] { get }
+    
+    
+    init()
 }

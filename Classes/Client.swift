@@ -9,14 +9,12 @@ import Foundation
 import SKTCapture
 import WebKit.WKWebView
 
-public class Client: NSObject, ClientReceiverProtocol {
+public class Client: NSObject, ClientReceiverProtocol, ClientConformanceProtocol {
     
     // MARK: - Variables
     
     internal private(set) var handle: ClientHandle!
     
-    // Used to denote which client currently has active
-    // ownership of BLE devices
     internal let ownershipId: String = UUID().uuidString
     
     internal static var disownedBlankId: String {
@@ -26,18 +24,22 @@ public class Client: NSObject, ClientReceiverProtocol {
         return "00000000-0000-0000-0000-000000000000"
     }
     
-    private var appInfo: SKTAppInfo?
+    internal private(set) var appInfo: SKTAppInfo?
     
-    // This is used to identify/retrieve a client with a webview
     internal private(set) var webpageURLString: String?
     
-    // This is used to send data back to the current web page
     internal private(set) weak var webview: WKWebView?
     
     internal private(set) var didOpenCapture: Bool = false
     
-    // Keep track of the capture helper devices that this client has opened.
     internal private(set) var openedDevices: [ClientDeviceHandle : ClientDevice] = [:]
+    
+    
+    
+    
+    required public override init() {
+        super.init()
+    }
 }
 
 
