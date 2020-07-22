@@ -96,7 +96,7 @@ extension Client {
         changeOwnership(forClientDeviceWith: clientDevice.handle, isOwned: true)
     }
     
-    internal func close(handle: Int, responseId: Int) {
+    internal func close(handle: ClientHandle, responseId: Int) {
         if handle == self.handle {
             closeAllDevices()
         } else {
@@ -321,7 +321,7 @@ extension Client: ClientReceiverProtocol {
     
     
     
-    internal func getProperty(with handle: Int, responseId: Int, property: SKTCaptureProperty) {
+    internal func getProperty(with handle: ClientHandle, responseId: Int, property: SKTCaptureProperty) {
         
         if handle == self.handle {
             getProperty(property: property, responseId: responseId) { (result) in
@@ -343,7 +343,7 @@ extension Client: ClientReceiverProtocol {
         }
     }
     
-    internal func setProperty(with handle: Int, responseId: Int, property: SKTCaptureProperty) {
+    internal func setProperty(with handle: ClientHandle, responseId: Int, property: SKTCaptureProperty) {
         
         if handle == self.handle {
             // TODO

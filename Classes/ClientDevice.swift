@@ -19,13 +19,16 @@ internal struct ClientDevice: ClientReceiverProtocol {
     
     // MARK: - Variables
     
+    /// Wrapper for bluetooth device
     private let captureHelperDevice: CaptureHelperDevice
     
-    var guid: String? {
+    /// GUID of the bluetooth device
+    internal var guid: String? {
         return captureHelperDevice.deviceInfo.guid
     }
     
-    let handle: Int
+    /// Unique identifer for the ClientDevice object
+    internal let handle: ClientHandle
     
     
     

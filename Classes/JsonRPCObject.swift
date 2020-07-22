@@ -7,6 +7,7 @@
 
 import Foundation
 
+/// Intercepts incoming JSON objects and translates into JSON-RPC format
 internal struct JsonRPCObject: CustomStringConvertible {
     
     let jsonrpc: String?
