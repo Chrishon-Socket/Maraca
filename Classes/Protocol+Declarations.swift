@@ -106,18 +106,17 @@ internal extension Bundle {
     }
 }
 
+/// Dictionary containing key-value pairs from incoming JSON responses or outgoing requests
+public typealias JSONDictionary = [String: Any]
 
-/// New Swift 5.0 property to be used in completion handlers that
-/// providers either a .success or .failure.
-/// The first argument is the success result, the second is the failure result
-internal typealias ResultResponse = Result<[String: Any], ErrorResponse>
+internal typealias ResultResponse = Result<JSONDictionary, ErrorResponse>
 
 /// Typealias for common completion handler
 internal typealias ClientReceiverCompletionHandler = (ResultResponse) -> ()
 
 /// Anonymous closure that takes the ResultResponse as a parameter
 /// and returns a json (whether for failure or success)
-internal let resultDictionary: (ResultResponse) -> [String: Any] = { (result) in
+internal let resultDictionary: (ResultResponse) -> JSONDictionary = { (result) in
     switch result {
     case .failure(let errorResponse):
         return errorResponse.json
@@ -149,12 +148,12 @@ internal protocol ClientReceiverProtocol {
 /// e.g. attempting to get a property, but an SKTResult that
 /// is not .E_NOERROR was returned.
 private protocol ErrorResponseProtocol: LocalizedError {
-    var json: [String: Any] { get }
+    var json: JSONDictionary { get }
 }
 
 internal struct ErrorResponse: ErrorResponseProtocol {
     public private(set) var json: [String : Any]
-    init(json: [String: Any]) {
+    init(json: JSONDictionary) {
         self.json = json
     }
 }
@@ -283,7 +282,7 @@ extension String {
 
 extension SKTCaptureProperty {
     
-    public func jsonFromGetProperty(with responseId: Int) throws -> [String: Any] {
+    public func jsonFromGetProperty(with responseId: Int) throws -> JSONDictionary {
         
         // TODO
         // Some of these properties are iOS-specific
@@ -391,8 +390,8 @@ extension SKTCaptureProperty {
             self.byteValue = valueFromJson as! Int8
         case .dataSource:
             
-            guard let dictionary = valueFromJson as? [String: Any] else {
-                throw MaracaError.malformedJson("The value from the JSON was expected to be a dictionary of type [String: Any], instead it is: \(valueFromJson)")
+            guard let dictionary = valueFromJson as? JSONDictionary else {
+                throw MaracaError.malformedJson("The value from the JSON was expected to be a dictionary of type JSONDictionary, instead it is: \(valueFromJson)")
             }
             
             guard
@@ -401,7 +400,7 @@ extension SKTCaptureProperty {
                 let name = dictionary[MaracaConstants.Keys.name.rawValue] as? String,
                 let flags = dictionary[MaracaConstants.Keys.flags.rawValue] as? Int
                 else {
-                    throw MaracaError.malformedJson("The value from the JSON was a dictionary of type [String: Any], but it did not contain all the necessary key-value pairs necessary for an SKTCaptureDataSource object")
+                    throw MaracaError.malformedJson("The value from the JSON was a dictionary of type JSONDictionary, but it did not contain all the necessary key-value pairs necessary for an SKTCaptureDataSource object")
             }
             
             let dataSource = SKTCaptureDataSource()
@@ -429,8 +428,8 @@ extension SKTCaptureProperty {
             self.uLongValue = valueFromJson as! UInt
         case .version:
             
-            guard let dictionary = valueFromJson as? [String: Any] else {
-                throw MaracaError.malformedJson("The value from the JSON was expected to be a dictionary of type [String: Any], instead it is: \(valueFromJson)")
+            guard let dictionary = valueFromJson as? JSONDictionary else {
+                throw MaracaError.malformedJson("The value from the JSON was expected to be a dictionary of type JSONDictionary, instead it is: \(valueFromJson)")
             }
             
             guard
@@ -444,7 +443,7 @@ extension SKTCaptureProperty {
                 let hour = dictionary[MaracaConstants.Keys.hour.rawValue] as? Int,
                 let minute = dictionary[MaracaConstants.Keys.minor.rawValue] as? Int
                 else {
-                    throw MaracaError.malformedJson("The value from the JSON was a dictionary of type [String: Any], but it did not contain all the necessary key-value pairs necessary for an SKTCaptureVersion object")
+                    throw MaracaError.malformedJson("The value from the JSON was a dictionary of type JSONDictionary, but it did not contain all the necessary key-value pairs necessary for an SKTCaptureVersion object")
             }
             
             let version = SKTCaptureVersion()

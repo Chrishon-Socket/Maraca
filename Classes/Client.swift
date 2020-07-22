@@ -81,7 +81,7 @@ extension Client {
         let clientDevice = ClientDevice(captureHelperDevice: captureHelperDevice)
         openedDevices[clientDevice.handle] = clientDevice
         
-        let responseJsonRpc: [String: Any] = [
+        let responseJsonRpc: JSONDictionary = [
             MaracaConstants.Keys.jsonrpc.rawValue:       jsonRPCObject.jsonrpc ?? Maraca.defaultJsonRpcVersion,
             MaracaConstants.Keys.id.rawValue:            jsonRPCObject.id ?? 2,
             MaracaConstants.Keys.result.rawValue: [
@@ -132,7 +132,7 @@ extension Client {
     
     internal func changeOwnership(forClientDeviceWith handle: ClientDeviceHandle, isOwned: Bool) {
         
-        let responseJson: [String: Any] = [
+        let responseJson: JSONDictionary = [
             MaracaConstants.Keys.jsonrpc.rawValue: Maraca.jsonRpcVersion ?? Maraca.defaultJsonRpcVersion,
             MaracaConstants.Keys.result.rawValue: [
                 MaracaConstants.Keys.handle.rawValue: handle,
@@ -344,16 +344,16 @@ extension Client {
     
     // For responding back to a web page that has
     // opened a capture with a client, etc.
-    internal func replyToWebpage(with jsonRpc: [String: Any]) {
+    internal func replyToWebpage(with jsonRpc: JSONDictionary) {
         sendJsonRpcToWebpage(jsonRpc: jsonRpc, javascriptFunctionName: "window.maraca.replyJsonRpc('")
     }
     
     // For sending information to the web page
-    internal func notifyWebpage(with jsonRpc: [String: Any]) {
+    internal func notifyWebpage(with jsonRpc: JSONDictionary) {
         sendJsonRpcToWebpage(jsonRpc: jsonRpc, javascriptFunctionName: "window.maraca.receiveJsonRpc('")
     }
     
-    private func sendJsonRpcToWebpage(jsonRpc: [String: Any], javascriptFunctionName: String) {
+    private func sendJsonRpcToWebpage(jsonRpc: JSONDictionary, javascriptFunctionName: String) {
         
         guard let jsonAsString = Maraca.convertJsonRpcToString(jsonRpc) else { return }
         

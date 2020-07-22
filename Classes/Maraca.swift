@@ -418,7 +418,7 @@ extension Maraca {
             
             switch result {
             case .success(let client):
-                let responseJsonRpc: [String: Any] = [
+                let responseJsonRpc: JSONDictionary = [
                     MaracaConstants.Keys.jsonrpc.rawValue:   jsonRPCObject.jsonrpc ?? Maraca.defaultJsonRpcVersion,
                     // The spec says "transport-openclient" but the id is expected to be an integer
                     MaracaConstants.Keys.id.rawValue:        jsonRPCObject.id ?? "transport-openclient",
@@ -729,7 +729,7 @@ extension Maraca: CaptureHelperAllDelegate {
             let clientHandle = activeClient.handle
         else { return }
         
-        let jsonRpc: [String: Any] = [
+        let jsonRpc: JSONDictionary = [
             MaracaConstants.Keys.jsonrpc.rawValue : Maraca.jsonRpcVersion ?? Maraca.defaultJsonRpcVersion,
             MaracaConstants.Keys.result.rawValue : [
                 MaracaConstants.Keys.handle.rawValue : clientHandle,
@@ -753,7 +753,7 @@ extension Maraca: CaptureHelperAllDelegate {
             let clientHandle = activeClient.handle
         else { return }
         
-        let jsonRpc: [String: Any] = [
+        let jsonRpc: JSONDictionary = [
             MaracaConstants.Keys.jsonrpc.rawValue : Maraca.jsonRpcVersion ?? Maraca.defaultJsonRpcVersion,
             MaracaConstants.Keys.result.rawValue : [
                 MaracaConstants.Keys.handle.rawValue : clientHandle,
@@ -781,7 +781,7 @@ extension Maraca: CaptureHelperAllDelegate {
             let clientHandle = activeClient.handle
         else { return }
         
-        let jsonRpc: [String: Any] = [
+        let jsonRpc: JSONDictionary = [
             MaracaConstants.Keys.jsonrpc.rawValue : Maraca.jsonRpcVersion ?? Maraca.defaultJsonRpcVersion,
             MaracaConstants.Keys.result.rawValue : [
                 MaracaConstants.Keys.handle.rawValue : clientHandle,
@@ -830,7 +830,7 @@ extension Maraca: CaptureHelperAllDelegate {
         // the device, it will send the guid back to Maraca
         // in order to open this device.
         
-        let jsonRpc: [String: Any] = [
+        let jsonRpc: JSONDictionary = [
             MaracaConstants.Keys.jsonrpc.rawValue : Maraca.jsonRpcVersion ?? Maraca.defaultJsonRpcVersion,
             MaracaConstants.Keys.result.rawValue : [
                 MaracaConstants.Keys.handle.rawValue : clientHandle,
@@ -886,7 +886,7 @@ extension Maraca: CaptureHelperAllDelegate {
        
         let dataAsIntegerArray: [UInt8] = [UInt8](dataFromDecodedDataStruct)
        
-        let jsonRpc: [String: Any] = [
+        let jsonRpc: JSONDictionary = [
             MaracaConstants.Keys.jsonrpc.rawValue : Maraca.jsonRpcVersion ?? Maraca.defaultJsonRpcVersion,
             MaracaConstants.Keys.result.rawValue : [
                 MaracaConstants.Keys.handle.rawValue : clientHandle,
@@ -927,10 +927,10 @@ extension Maraca: CaptureHelperAllDelegate {
 
 extension Maraca {
     
-    private static func convertToDictionary(text: String) -> [String: Any]? {
+    private static func convertToDictionary(text: String) -> JSONDictionary? {
         if let data = text.data(using: .utf8) {
             do {
-                return try JSONSerialization.jsonObject(with: data, options: []) as? [String: Any]
+                return try JSONSerialization.jsonObject(with: data, options: []) as? JSONDictionary
             } catch {
                 DebugLogger.shared.addDebugMessage("\(String(describing: type(of: self))) - Error converting JSON string to dictionary. Error: \(error)")
             }
@@ -938,7 +938,7 @@ extension Maraca {
         return nil
     }
     
-    public static func convertJsonRpcToString(_ jsonRpc: [String: Any]) -> String? {
+    public static func convertJsonRpcToString(_ jsonRpc: JSONDictionary) -> String? {
         do {
             let jsonAsData = try JSONSerialization.data(withJSONObject: jsonRpc, options: [])
             return String(data: jsonAsData, encoding: String.Encoding.utf8)
@@ -1020,9 +1020,9 @@ extension Maraca {
         
     }
     
-    public static func constructErrorResponse(error: SKTResult, errorMessage: String, handle: Int?, responseId: Int?) -> [String: Any] {
+    public static func constructErrorResponse(error: SKTResult, errorMessage: String, handle: Int?, responseId: Int?) -> JSONDictionary {
         
-        let responseJsonRpc: [String: Any] = [
+        let responseJsonRpc: JSONDictionary = [
             MaracaConstants.Keys.jsonrpc.rawValue:  Maraca.jsonRpcVersion ?? Maraca.defaultJsonRpcVersion,
             MaracaConstants.Keys.id.rawValue:       responseId ?? 6,
             MaracaConstants.Keys.error.rawValue: [
