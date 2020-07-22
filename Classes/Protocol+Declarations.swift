@@ -109,10 +109,10 @@ internal extension Bundle {
 /// Dictionary containing key-value pairs from incoming JSON responses or outgoing requests
 public typealias JSONDictionary = [String: Any]
 
+/// Result of get or set requests. Returns JSON dictionary for success and error for failure
 internal typealias ResultResponse = Result<JSONDictionary, ErrorResponse>
 
-/// Typealias for common completion handler
-internal typealias ClientReceiverCompletionHandler = (ResultResponse) -> ()
+
 
 /// Anonymous closure that takes the ResultResponse as a parameter
 /// and returns a json (whether for failure or success)
@@ -129,12 +129,29 @@ internal let resultDictionary: (ResultResponse) -> JSONDictionary = { (result) i
 
 
 
+/// Typealias for common completion handler
+internal typealias ClientReceiverCompletionHandler = (ResultResponse) -> ()
 
-
-/// A protocol adopted by both the Client and ClientDevice objects
-/// It provides a set of functions/properties that both objects must implement
+/// Protocol adopted by both the Client and ClientDevice objects for performing get and set requests
 internal protocol ClientReceiverProtocol {
+    /**
+     Performs get property request and returns response in a JSONDictionary if successful or an ErrorResponse otherwise
+     
+     - Parameters:
+        - property: The `SKTCaptureProperty` to be requested
+        - responseId: The unique identifier from the web application making the request
+        - completion: Completion handler for returning result of get request
+     */
     func getProperty(property: SKTCaptureProperty, responseId: Int, completion: @escaping ClientReceiverCompletionHandler)
+    
+    /**
+    Performs set property request and returns response in a JSONDictionary if successful or an ErrorResponse otherwise
+    
+    - Parameters:
+       - property: The `SKTCaptureProperty` to be requested
+       - responseId: The unique identifier from the web application making the request
+       - completion: Completion handler for returning result of set request
+    */
     func setProperty(property: SKTCaptureProperty, responseId: Int, completion: @escaping ClientReceiverCompletionHandler)
 }
 
@@ -143,7 +160,7 @@ internal protocol ClientReceiverProtocol {
 
 
 
-/// The ErrorResponse struct is used to return a json
+/// Protocol adopted by ErrorResponse used to return a json
 /// dictionary containing information on any errors
 /// e.g. attempting to get a property, but an SKTResult that
 /// is not .E_NOERROR was returned.
@@ -151,6 +168,8 @@ private protocol ErrorResponseProtocol: LocalizedError {
     var json: JSONDictionary { get }
 }
 
+/// Returns JSONDictionary containing information on errors
+/// encountered during a get or set request
 internal struct ErrorResponse: ErrorResponseProtocol {
     public private(set) var json: [String : Any]
     init(json: JSONDictionary) {
@@ -165,32 +184,33 @@ internal struct ErrorResponse: ErrorResponseProtocol {
 
 /// Errors that are thrown during the conversion of an
 /// SKTProperty to a json dictionary
-
 internal enum MaracaError: Error {
     
+    /// The SKTAppInfo object contains invalid information.
+    /// Likely cause is that `appInfo.verify(withBundleId:)` failed
     case invalidAppInfo(String)
     
-    // The SKTCaptureProperty has mismatching type and values
-    // e.g. The type == .array, but .arrayValue == nil
+    /// The SKTCaptureProperty has mismatching type and values
+    /// e.g. The type == .array, but .arrayValue == nil
     case malformedCaptureProperty(String)
     
-    // The JSON RPC object is missing an important key-value pair
-    // e.g. The dictionary was expected to contain information
-    // to do a setProperty
+    /// The JSON RPC object is missing an important key-value pair
+    /// e.g. The dictionary was expected to contain information
+    /// to do a setProperty
     case malformedJson(String)
     
-    // The values within the JSON RPC object has the proper
-    // key, but its value is invalid
-    // e.g. The user wants to get the data source from a CaptureHelperDevice,
-    // but the data source Id they provide is not a case in the SKTCaptureDataSourceID enum.
+    /// The values within the JSON RPC object has the proper
+    /// key, but its value is invalid
+    /// e.g. The user wants to get the data source from a CaptureHelperDevice,
+    /// but the data source Id they provide is not a case in the SKTCaptureDataSourceID enum.
     case invalidKeyValuePair(String)
     
-    // The property type is not supported at this time
-    // e.g. The .object and .enum type
+    /// The property type is not supported at this time
+    /// e.g. The .object and .enum type
     case propertyTypeNotSupported(String)
     
-    // The current installed version of Capture is not
-    // compatible with the version sent from the web application using CaptureJS
+    /// The current installed version of Capture is not
+    /// compatible with the version sent from the web application using CaptureJS
     case outdatedVersion(String)
 }
 
@@ -226,16 +246,24 @@ public typealias ClientDeviceHandle = Int
 // MARK: - String
 
 extension String {
-    // In some cases, data returned from a CaptureHelperDevice will contain
-    // escaped characters (e.g. \n or \r)
-    // Strings containing these characters will result in a Javascript exception
-    // due to an unterminating string.
-    // Such characters are allowed in Swift, but often cause this exception when
-    // sent to a web page or server of some kind.
-    // This extension adds an extra backslash to the response json before it is sent.
-    // When this value is finally interpreted by the web page, the extra backslash is removed,
-    // revealing the original string-value.
-    
+     
+    /**
+     Maintains "directory" of possibly encountered characters that need to be escaped.
+     Otherwise, errors may occur
+     
+     In some cases, data returned from a CaptureHelperDevice will contain
+     escaped characters (e.g. \n or \r)
+     
+     Strings containing these characters will result in a Javascript exception
+     due to an unterminating string.
+     
+     Such characters are allowed in Swift, but often cause this exception when
+     sent to a web page or server of some kind.
+     
+     This extension adds an extra backslash to the response json before it is sent.
+     When this value is finally interpreted by the web page, the extra backslash is removed,
+     revealing the original string-value.
+     */
     enum escapeCharacters: String, CaseIterable {
         case nulTerminatoor     = "\0"
         case horizontalTab      = "\t"
@@ -246,6 +274,7 @@ extension String {
         case backslash          = "\\"
     }
     
+    /// Returns String without error-causing characters that need to be escaped
     var escaped: String {
         let entities = [escapeCharacters.nulTerminatoor.rawValue:   "\\0",
                         escapeCharacters.horizontalTab.rawValue:    "\\t",
@@ -261,6 +290,7 @@ extension String {
             }
     }
     
+    /// Determines whether error-causing characters that need to be escaped are contained in the String
     func containsEscapeCharacters() -> Bool {
         let characters = escapeCharacters.allCases.map ({ $0.rawValue }).joined()
         let characterSet = CharacterSet(charactersIn: characters)
@@ -282,6 +312,13 @@ extension String {
 
 extension SKTCaptureProperty {
     
+    /**
+     Builds a JSONDictionary from the existing SKTCaptureProperty,
+     which may be transferred to web application using CaptureJS
+     
+     - Parameters:
+        - responseId: The unique identifier from the web application making the request
+     */
     public func jsonFromGetProperty(with responseId: Int) throws -> JSONDictionary {
         
         // TODO
@@ -371,7 +408,12 @@ extension SKTCaptureProperty {
     
     
     
+    /**
+    Sets/Updates an existing SKTCaptureProperty value
     
+    - Parameters:
+       - valueFromJSON: The value contained within a JSONDictionary coming from web application using CaptureJS
+    */
     public func setPropertyValue(using valueFromJson: Any) throws {
         switch type {
         case .array:
