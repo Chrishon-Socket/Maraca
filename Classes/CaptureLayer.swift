@@ -108,7 +108,7 @@ extension SKTCaptureLayer {
     internal func sendJSONForError(activeClient: Client, error: SKTResult) {
         // TODO
         // There is no information associated with the error
-        let errorResponseJsonRpc = Maraca.constructErrorResponse(error: error,
+        let errorResponseJsonRpc = Utility.constructErrorResponse(error: error,
                                                                  errorMessage: "Some kind of error specific message",
                                                                  handle: activeClient.handle,
                                                                  responseId: nil)
@@ -158,7 +158,7 @@ extension SKTCaptureLayer {
         guard result == SKTResult.E_NOERROR else {
           
             let errorMessage = "There was an error with arrival or removal of the Socket Mobile device: \(String(describing: device.deviceInfo.name)). Error: \(result)"
-            let errorResponseJsonRpc = Maraca.constructErrorResponse(error: result,
+            let errorResponseJsonRpc = Utility.constructErrorResponse(error: result,
                                                                      errorMessage: errorMessage,
                                                                      handle: activeClient.handle,
                                                                      responseId: nil)
@@ -206,7 +206,7 @@ extension SKTCaptureLayer {
        
         guard result == SKTResult.E_NOERROR else {
            
-            let errorResponseJsonRpc = Maraca.constructErrorResponse(error: result,
+            let errorResponseJsonRpc = Utility.constructErrorResponse(error: result,
                                                                     errorMessage: "There was an error receiving decoded data from the Socket Mobile device: \(String(describing: device.deviceInfo.name)). Error: \(result)",
                                                                     handle: activeClient.handle,
                                                                     responseId: nil)

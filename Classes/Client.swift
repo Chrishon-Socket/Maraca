@@ -122,7 +122,7 @@ extension Client {
                 // The webview should not be nil
                 fatalError("The Client must have been created without calling `openWithAppInfo`")
             }
-            Maraca.sendErrorResponse(withError: SKTResult.E_INVALIDHANDLE,
+            Utility.sendErrorResponse(withError: SKTResult.E_INVALIDHANDLE,
                                      webView: webview,
                                      handle: handle,
                                      responseId: responseId)
@@ -203,7 +203,7 @@ extension Client {
     
     private func sendJsonRpcToWebpage(jsonRpc: JSONDictionary, javascriptFunctionName: String) {
         
-        guard let jsonAsString = Maraca.convertJsonRpcToString(jsonRpc) else { return }
+        guard let jsonAsString = Utility.convertJsonRpcToString(jsonRpc) else { return }
         
         // Refer to replyJSonRpc and receiveJsonRPC functions
         // REceive used for when received decoded data
@@ -250,7 +250,7 @@ extension Client: ClientReceiverProtocol {
             
             guard result == .E_NOERROR else {
                 
-                let errorResponseJsonRpc = Maraca.constructErrorResponse(error: result,
+                let errorResponseJsonRpc = Utility.constructErrorResponse(error: result,
                                                                          errorMessage: "There was an error with getting property from Capture. Error: \(result)",
                                                                          handle: self.handle,
                                                                          responseId: responseId)
@@ -276,7 +276,7 @@ extension Client: ClientReceiverProtocol {
                 // Send an error response Json back to the web page
                 // if a dictionary cannot be constructed from
                 // the resulting SKTCaptureProperty
-                let errorResponseJsonRpc = Maraca.constructErrorResponse(error: SKTResult.E_INVALIDPARAMETER,
+                let errorResponseJsonRpc = Utility.constructErrorResponse(error: SKTResult.E_INVALIDPARAMETER,
                                                                          errorMessage: error.localizedDescription,
                                                                          handle: self.handle,
                                                                          responseId: responseId)
@@ -292,7 +292,7 @@ extension Client: ClientReceiverProtocol {
             
             guard result == .E_NOERROR else {
                 
-                let errorResponseJsonRpc = Maraca.constructErrorResponse(error: result,
+                let errorResponseJsonRpc = Utility.constructErrorResponse(error: result,
                                                                          errorMessage: "There was an error with setting property. Error: \(result)",
                                                                          handle: self.handle,
                                                                          responseId: responseId)
@@ -334,7 +334,7 @@ extension Client: ClientReceiverProtocol {
         } else {
             
             let errorMessage = "There is no client or device with the specified handle. The device may have been recently closed"
-            let errorResponseJsonRpc = Maraca.constructErrorResponse(error: SKTResult.E_INVALIDHANDLE,
+            let errorResponseJsonRpc = Utility.constructErrorResponse(error: SKTResult.E_INVALIDHANDLE,
                                                                      errorMessage: errorMessage,
                                                                      handle: handle,
                                                                      responseId: responseId)
@@ -360,7 +360,7 @@ extension Client: ClientReceiverProtocol {
                 self.replyToWebpage(with: resultDictionary(result))
             })
         } else {
-            let errorResponseJsonRpc = Maraca.constructErrorResponse(error: SKTResult.E_INVALIDHANDLE,
+            let errorResponseJsonRpc = Utility.constructErrorResponse(error: SKTResult.E_INVALIDHANDLE,
                                                                      errorMessage: "There is no client or device with the specified handle. The device may have been recently closed",
                                                                      handle: handle,
                                                                      responseId: responseId)

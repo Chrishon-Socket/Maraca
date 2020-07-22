@@ -349,7 +349,7 @@ extension Maraca: WKScriptMessageHandler {
         switch messageHandler {
         case .maracaSendJsonRpc:
             
-            guard let dictionary = Maraca.convertToDictionary(text: messageBody) else {
+            guard let dictionary = Utility.convertToDictionary(text: messageBody) else {
                 return false
             }
             
@@ -440,13 +440,13 @@ extension Maraca {
                 strongSelf.delegate?.maraca?(strongSelf, webviewDidOpenCaptureWith: client)
             case .failure(_):
                 
-                let errorResponseJsonRpc = Maraca.constructErrorResponse(error: SKTResult.E_INVALIDAPPINFO,
+                let errorResponseJsonRpc = Utility.constructErrorResponse(error: SKTResult.E_INVALIDAPPINFO,
                                                                          errorMessage: "The AppInfo parameters are invalid",
                                                                          handle: nil,
                                                                          responseId: jsonRPCObject.id as? Int)
                 
                 
-                guard let jsonAsString = Maraca.convertJsonRpcToString(errorResponseJsonRpc) else { return }
+                guard let jsonAsString = Utility.convertJsonRpcToString(errorResponseJsonRpc) else { return }
                 
                 // Refer to replyJSonRpc and receiveJsonRPC functions
                 // REceive used for when received decoded data
@@ -486,7 +486,7 @@ extension Maraca {
             // The user may have still sent the client handle
             let clientHandle = jsonRPCObject.getParamsValue(for: MaracaConstants.Keys.handle.rawValue) as? Int
             
-            let errorResponseJsonRpc = Maraca.constructErrorResponse(error: SKTResult.E_INVALIDPARAMETER,
+            let errorResponseJsonRpc = Utility.constructErrorResponse(error: SKTResult.E_INVALIDPARAMETER,
                                                                      errorMessage: "The id was not specified",
                                                                      handle: clientHandle,
                                                                      responseId: nil)
@@ -497,7 +497,7 @@ extension Maraca {
         guard let clientHandle = jsonRPCObject.getParamsValue(for: MaracaConstants.Keys.handle.rawValue) as? Int else {
             // The user may have still sent the responseId
             let responseId = jsonRPCObject.id as? Int
-            Maraca.sendErrorResponse(withError: SKTResult.E_INVALIDHANDLE,
+            Utility.sendErrorResponse(withError: SKTResult.E_INVALIDHANDLE,
                                      webView: webview,
                                      handle: nil,
                                      responseId: responseId)
@@ -505,7 +505,7 @@ extension Maraca {
         }
         
         guard let deviceGUID = jsonRPCObject.getParamsValue(for: MaracaConstants.Keys.guid.rawValue) as? String else {
-            Maraca.sendErrorResponse(withError: SKTResult.E_INVALIDPARAMETER,
+            Utility.sendErrorResponse(withError: SKTResult.E_INVALIDPARAMETER,
                                      webView: webview,
                                      handle: clientHandle,
                                      responseId: responseId)
@@ -515,7 +515,7 @@ extension Maraca {
         
         
         guard let client = clientsList[clientHandle] else {
-            Maraca.sendErrorResponse(withError: SKTResult.E_INVALIDHANDLE,
+            Utility.sendErrorResponse(withError: SKTResult.E_INVALIDHANDLE,
                                      webView: webview,
                                      handle: clientHandle,
                                      responseId: responseId)
@@ -548,7 +548,7 @@ extension Maraca {
             // The web page is attempting to open a CaptureHelperDevice that
             // is no longer connected.
             // Reply to web page
-            let errorResponseJsonRpc = Maraca.constructErrorResponse(error: SKTResult.E_DEVICENOTOPEN,
+            let errorResponseJsonRpc = Utility.constructErrorResponse(error: SKTResult.E_DEVICENOTOPEN,
                                                                      errorMessage: "There is no device with guid: \(deviceGUID) open at this time",
                                                                      handle: client.handle,
                                                                      responseId: responseId)
@@ -562,7 +562,7 @@ extension Maraca {
     private func close(jsonRPCObject: JsonRPCObject, webview: WKWebView) {
         
         guard let handle = jsonRPCObject.getParamsValue(for: MaracaConstants.Keys.handle.rawValue) as? Int else {
-            Maraca.sendErrorResponse(withError: SKTResult.E_INVALIDHANDLE,
+            Utility.sendErrorResponse(withError: SKTResult.E_INVALIDHANDLE,
                                      webView: webview,
                                      handle: nil,
                                      responseId: nil)
@@ -570,7 +570,7 @@ extension Maraca {
         }
         
         guard let responseId = jsonRPCObject.id as? Int else {
-            let errorResponseJsonRpc = Maraca.constructErrorResponse(error: SKTResult.E_INVALIDPARAMETER,
+            let errorResponseJsonRpc = Utility.constructErrorResponse(error: SKTResult.E_INVALIDPARAMETER,
                                                                      errorMessage: "The id was not specified",
                                                                      handle: handle,
                                                                      responseId: nil)
@@ -597,7 +597,7 @@ extension Maraca {
     private func getProperty(jsonRPCObject: JsonRPCObject, webview: WKWebView) {
         
         guard let handle = jsonRPCObject.getParamsValue(for: MaracaConstants.Keys.handle.rawValue) as? Int else {
-            Maraca.sendErrorResponse(withError: SKTResult.E_INVALIDHANDLE,
+            Utility.sendErrorResponse(withError: SKTResult.E_INVALIDHANDLE,
                                      webView: webview,
                                      handle: nil,
                                      responseId: nil)
@@ -605,7 +605,7 @@ extension Maraca {
         }
         
         guard let responseId = jsonRPCObject.id as? Int else {
-            let errorResponseJsonRpc = Maraca.constructErrorResponse(error: SKTResult.E_INVALIDPARAMETER,
+            let errorResponseJsonRpc = Utility.constructErrorResponse(error: SKTResult.E_INVALIDPARAMETER,
                                                                      errorMessage: "The id was not specified",
                                                                      handle: handle,
                                                                      responseId: nil)
@@ -613,9 +613,9 @@ extension Maraca {
             return
         }
         
-        guard let captureProperty = constructSKTCaptureProperty(from: jsonRPCObject) else {
+        guard let captureProperty = Utility.constructSKTCaptureProperty(from: jsonRPCObject) else {
             // The values sent (property Id and property type) were invalid
-            Maraca.sendErrorResponse(withError: SKTResult.E_INVALIDPARAMETER,
+            Utility.sendErrorResponse(withError: SKTResult.E_INVALIDPARAMETER,
                                      webView: webview,
                                      handle: nil,
                                      responseId: responseId)
@@ -627,7 +627,7 @@ extension Maraca {
     private func setProperty(jsonRPCObject: JsonRPCObject, webview: WKWebView) {
         
         guard let handle = jsonRPCObject.getParamsValue(for: MaracaConstants.Keys.handle.rawValue) as? Int else {
-            Maraca.sendErrorResponse(withError: SKTResult.E_INVALIDHANDLE,
+            Utility.sendErrorResponse(withError: SKTResult.E_INVALIDHANDLE,
                                      webView: webview,
                                      handle: nil,
                                      responseId: nil)
@@ -635,7 +635,7 @@ extension Maraca {
         }
         
         guard let responseId = jsonRPCObject.id as? Int else {
-            let errorResponseJsonRpc = Maraca.constructErrorResponse(error: SKTResult.E_INVALIDPARAMETER,
+            let errorResponseJsonRpc = Utility.constructErrorResponse(error: SKTResult.E_INVALIDPARAMETER,
                                                                      errorMessage: "The id was not specified",
                                                                      handle: handle,
                                                                      responseId: nil)
@@ -645,10 +645,10 @@ extension Maraca {
         
         guard
             let propertyFromJson = jsonRPCObject.getParamsValue(for: MaracaConstants.Keys.property.rawValue) as? [String : Any],
-            let captureProperty = constructSKTCaptureProperty(from: jsonRPCObject)
+            let captureProperty = Utility.constructSKTCaptureProperty(from: jsonRPCObject)
         else {
             // The values sent were invalid or nil
-            Maraca.sendErrorResponse(withError: SKTResult.E_INVALIDPARAMETER,
+            Utility.sendErrorResponse(withError: SKTResult.E_INVALIDPARAMETER,
                                      webView: webview,
                                      handle: nil,
                                      responseId: responseId)
@@ -665,7 +665,7 @@ extension Maraca {
                 // Send an error response Json back to the web page
                 // if an SKTCaptureProperty cannot be constructed
                 // from the dictionary sent from the webpage
-                let errorResponseJsonRpc = Maraca.constructErrorResponse(error: SKTResult.E_INVALIDPARAMETER,
+                let errorResponseJsonRpc = Utility.constructErrorResponse(error: SKTResult.E_INVALIDPARAMETER,
                                                                          errorMessage: error.localizedDescription,
                                                                          handle: activeClient?.handle,
                                                                          responseId: responseId)
@@ -714,47 +714,6 @@ extension Maraca: ActiveClientManagerDelegate {
 
 extension Maraca {
     
-    private static func convertToDictionary(text: String) -> JSONDictionary? {
-        if let data = text.data(using: .utf8) {
-            do {
-                return try JSONSerialization.jsonObject(with: data, options: []) as? JSONDictionary
-            } catch {
-                DebugLogger.shared.addDebugMessage("\(String(describing: type(of: self))) - Error converting JSON string to dictionary. Error: \(error)")
-            }
-        }
-        return nil
-    }
-    
-    public static func convertJsonRpcToString(_ jsonRpc: JSONDictionary) -> String? {
-        do {
-            let jsonAsData = try JSONSerialization.data(withJSONObject: jsonRpc, options: [])
-            return String(data: jsonAsData, encoding: String.Encoding.utf8)
-        } catch let error {
-            DebugLogger.shared.addDebugMessage("\(String(describing: type(of: self))) - Error converting JsonRpc object to String: \(error)")
-            return nil
-        }
-    }
-    
-    private func constructSKTCaptureProperty(from jsonRPCObject: JsonRPCObject) -> SKTCaptureProperty? {
-        
-        guard
-            let property = jsonRPCObject.getParamsValue(for: MaracaConstants.Keys.property.rawValue) as? [String : Any],
-            let id = property[MaracaConstants.Keys.id.rawValue] as? Int,
-            let type = property[MaracaConstants.Keys.type.rawValue] as? Int,
-            let propertyID = SKTCapturePropertyID(rawValue: id),
-            let propertyType = SKTCapturePropertyType(rawValue: type)
-            else { return nil }
-        
-        let captureProperty = SKTCaptureProperty()
-        captureProperty.id = propertyID
-        captureProperty.type = propertyType
-        
-        return captureProperty
-    }
-    
-    
-    
-    
     /// Re-assumes SKTCapture layer delegate
     public func assumeCaptureDelegate() {
         capture?.pushDelegate(activeClientManager.captureDelegate)
@@ -763,70 +722,5 @@ extension Maraca {
     /// Resigns SKTCapture layer delegate to desired receiver
     public func resignCaptureDelegate(to: CaptureHelperAllDelegate) {
         capture?.pushDelegate(to)
-    }
-    
-    
-    
-    
-    /// Construct a json dictionary with information based on the SKTResult
-    /// passed in. Then send the dictionary to the web page that the WKWebView
-    /// is displaying
-    public static func sendErrorResponse(withError error: SKTResult, webView: WKWebView, handle: Int?, responseId: Int?) {
-        
-        // TODO
-        // The client for this webview should be the same as
-        // the client for the handle?
-        // Is it necessary to get a client in for error case,
-        // when it would be the same?
-        guard
-            let webpageURLString = webView.url?.absoluteString,
-            let client = Maraca.shared.getClient(for: webpageURLString) else {
-                // Temporary
-                // But if this is nil, something is wrong
-                fatalError()
-        }
-        
-        var errorMessage: String = ""
-        
-        switch error {
-        case .E_INVALIDHANDLE:
-            
-            if let _ = handle {
-                errorMessage = "There is no client or device with the specified handle. The desired client or device may have been recently closed"
-            } else {
-                errorMessage = "A handle was not specified"
-            }
-            
-        case .E_INVALIDPARAMETER:
-            
-            errorMessage = "There is a missing or invalid property in the JSON-RPC that is required"
-        
-        case .E_INVALIDAPPINFO:
-            
-            errorMessage = "The AppInfo parameters are invalid"
-            
-        default: return
-        }
-        
-        let errorResponseJsonRpc = constructErrorResponse(error: error, errorMessage: errorMessage, handle: handle, responseId: responseId)
-        client.replyToWebpage(with: errorResponseJsonRpc)
-        
-    }
-    
-    public static func constructErrorResponse(error: SKTResult, errorMessage: String, handle: Int?, responseId: Int?) -> JSONDictionary {
-        
-        let responseJsonRpc: JSONDictionary = [
-            MaracaConstants.Keys.jsonrpc.rawValue:  Maraca.jsonRpcVersion ?? Maraca.defaultJsonRpcVersion,
-            MaracaConstants.Keys.id.rawValue:       responseId ?? 6,
-            MaracaConstants.Keys.error.rawValue: [
-                MaracaConstants.Keys.code.rawValue: error.rawValue,
-                MaracaConstants.Keys.message.rawValue: errorMessage,
-                MaracaConstants.Keys.data.rawValue: [
-                    MaracaConstants.Keys.handle.rawValue: handle ?? -1
-                ]
-            ]
-        ]
-        
-        return responseJsonRpc
     }
 }
