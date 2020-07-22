@@ -73,6 +73,16 @@ public final class Maraca: NSObject {
 
 extension Maraca {
     
+    /// Determines whether debug messages will be logged
+    /// to the DebugLogger object
+    /// - Parameters:
+    ///   - isActivated: Boolean value that, when set to true will save debug messages to the DebugLogger. False by default if unused
+    @discardableResult
+    public func setDebugMode(isActivated: Bool) -> Maraca {
+        DebugLogger.shared.toggleDebug(isActivated: isActivated)
+        return self
+    }
+    
     @discardableResult
     public func injectCustomJavascript(mainBundle: Bundle, javascriptFileNames: [String]) -> Maraca {
         
@@ -133,7 +143,7 @@ extension Maraca {
         capture?.dispatchQueue = DispatchQueue.main
         capture?.openWithAppInfo(AppInfo) { [weak self] (result) in
             guard let strongSelf = self else { return }
-            print("Result of Capture initialization: \(result.rawValue)")
+            DebugLogger.shared.addDebugMessage("\(String(describing: type(of: strongSelf))) - Result of Capture initialization: \(result.rawValue)")
             
             if result == SKTResult.E_NOERROR {
                 completion?(result)
@@ -151,7 +161,7 @@ extension Maraca {
                 } else {
 
                     // Attempt to open capture again
-                    print("\n--- Failed to open capture. attempting again...\n")
+                    DebugLogger.shared.addDebugMessage("\(String(describing: type(of: self))) - Failed to open capture. attempting again...\n")
                     strongSelf.numberOfFailedOpenCaptureAttempts += 1
                     strongSelf.begin(withAppKey: appKey, appId: appId, developerId: developerId)
                 }
@@ -344,9 +354,9 @@ extension Maraca: WKScriptMessageHandler {
                 let method = jsonRPCObject.method,
                 let captureJSMethod = CaptureJSMethod(rawValue: method)
                 else {
-                    print("message body: \(messageBody)\n")
-                    print("dictionary: \(dictionary)\n")
-                    print("jsonRpcObject: \(jsonRPCObject)\n")
+                    DebugLogger.shared.addDebugMessage("\(String(describing: type(of: self))) - Unable to build CaptureJSMethod enum value. message body: \(messageBody)\n")
+                    DebugLogger.shared.addDebugMessage("\(String(describing: type(of: self))) - dictionary: \(dictionary)\n")
+                    DebugLogger.shared.addDebugMessage("\(String(describing: type(of: self))) - jsonRpcObject: \(jsonRPCObject)\n")
                     return false
             }
             
@@ -442,10 +452,9 @@ extension Maraca {
                 
                 webview.evaluateJavaScript(javascript, completionHandler: { (object, error) in
                     if let error = error {
-                        print("\nerror when calling \(javascript)")
-                        print("Error: \(error)\n")
+                        DebugLogger.shared.addDebugMessage("\(String(describing: type(of: self))) - Error evaluating javascript expression: \(javascript). Error: \(error)\n")
                     } else {
-                        print("\nscript \(javascript) completed\n")
+                        DebugLogger.shared.addDebugMessage("\(String(describing: type(of: self))) - Successfully evaluated javascript expression: \(javascript)\n")
                     }
                 })
                 
@@ -645,7 +654,7 @@ extension Maraca {
                 try captureProperty.setPropertyValue(using: propertyValue)
             } catch let error {
                 
-                print("Error setting the value for SKTCaptureProperty: \(error)")
+                DebugLogger.shared.addDebugMessage("\(String(describing: type(of: self))) - Error setting the value for SKTCaptureProperty: \(error)")
                 
                 // Send an error response Json back to the web page
                 // if an SKTCaptureProperty cannot be constructed
@@ -923,7 +932,7 @@ extension Maraca {
             do {
                 return try JSONSerialization.jsonObject(with: data, options: []) as? [String: Any]
             } catch {
-                print(error.localizedDescription)
+                DebugLogger.shared.addDebugMessage("\(String(describing: type(of: self))) - Error converting JSON string to dictionary. Error: \(error)")
             }
         }
         return nil
@@ -934,7 +943,7 @@ extension Maraca {
             let jsonAsData = try JSONSerialization.data(withJSONObject: jsonRpc, options: [])
             return String(data: jsonAsData, encoding: String.Encoding.utf8)
         } catch let error {
-            print("Error converting JsonRpc object to String: \(error.localizedDescription)")
+            DebugLogger.shared.addDebugMessage("\(String(describing: type(of: self))) - Error converting JsonRpc object to String: \(error)")
             return nil
         }
     }

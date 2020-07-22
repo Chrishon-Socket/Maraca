@@ -70,7 +70,7 @@ public struct ClientDevice: ClientReceiverProtocol {
                 let jsonFromGetProperty = try unwrappedProperty.jsonFromGetProperty(with: responseId)
                 completion(.success(jsonFromGetProperty))
             } catch let error {
-                print("Error converting SKTCaptureProperty to a dictionary: \(error)")
+                DebugLogger.shared.addDebugMessage("\(String(describing: type(of: self))) - Error converting SKTCaptureProperty to a dictionary: \(error)")
                 
                 // Send an error response Json back to the web page
                 // if a dictionary cannot be constructed from
