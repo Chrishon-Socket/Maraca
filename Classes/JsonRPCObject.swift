@@ -7,7 +7,7 @@
 
 import Foundation
 
-public struct JsonRPCObject: CustomStringConvertible {
+internal struct JsonRPCObject: CustomStringConvertible {
     
     let jsonrpc: String?
     
@@ -27,7 +27,7 @@ public struct JsonRPCObject: CustomStringConvertible {
         self.result = dictionary[MaracaConstants.Keys.result.rawValue] as? [String: Any]
     }
     
-    public func getAppInfo() -> [String: Any]? {
+    internal func getAppInfo() -> [String: Any]? {
         var dictionary: [String: Any] = [:]
         
         guard
@@ -43,11 +43,11 @@ public struct JsonRPCObject: CustomStringConvertible {
         return dictionary
     }
     
-    public func getParamsValue(for key: String) -> Any? {
+    internal func getParamsValue(for key: String) -> Any? {
         return params?[key]
     }
     
-    public var description: String {
+    internal var description: String {
         var toString: String = ""
         
         toString = "JSON RPC version: \(String(describing: jsonrpc))\n"

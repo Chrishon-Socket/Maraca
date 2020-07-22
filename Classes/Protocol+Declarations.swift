@@ -110,14 +110,14 @@ internal extension Bundle {
 /// New Swift 5.0 property to be used in completion handlers that
 /// providers either a .success or .failure.
 /// The first argument is the success result, the second is the failure result
-public typealias ResultResponse = Result<[String: Any], ErrorResponse>
+internal typealias ResultResponse = Result<[String: Any], ErrorResponse>
 
 /// Typealias for common completion handler
-public typealias ClientReceiverCompletionHandler = (ResultResponse) -> ()
+internal typealias ClientReceiverCompletionHandler = (ResultResponse) -> ()
 
 /// Anonymous closure that takes the ResultResponse as a parameter
 /// and returns a json (whether for failure or success)
-public let resultDictionary: (ResultResponse) -> [String: Any] = { (result) in
+internal let resultDictionary: (ResultResponse) -> [String: Any] = { (result) in
     switch result {
     case .failure(let errorResponse):
         return errorResponse.json
@@ -134,7 +134,7 @@ public let resultDictionary: (ResultResponse) -> [String: Any] = { (result) in
 
 /// A protocol adopted by both the Client and ClientDevice objects
 /// It provides a set of functions/properties that both objects must implement
-public protocol ClientReceiverProtocol {
+internal protocol ClientReceiverProtocol {
     func getProperty(property: SKTCaptureProperty, responseId: Int, completion: @escaping ClientReceiverCompletionHandler)
     func setProperty(property: SKTCaptureProperty, responseId: Int, completion: @escaping ClientReceiverCompletionHandler)
 }
@@ -152,7 +152,7 @@ private protocol ErrorResponseProtocol: LocalizedError {
     var json: [String: Any] { get }
 }
 
-public struct ErrorResponse: ErrorResponseProtocol {
+internal struct ErrorResponse: ErrorResponseProtocol {
     public private(set) var json: [String : Any]
     init(json: [String: Any]) {
         self.json = json

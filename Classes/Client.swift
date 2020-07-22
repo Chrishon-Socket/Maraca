@@ -13,13 +13,13 @@ public class Client: NSObject, ClientReceiverProtocol {
     
     // MARK: - Variables
     
-    public private(set) var handle: ClientHandle!
+    internal private(set) var handle: ClientHandle!
     
     // Used to denote which client currently has active
     // ownership of BLE devices
-    public let ownershipId: String = UUID().uuidString
+    internal let ownershipId: String = UUID().uuidString
     
-    public static var disownedBlankId: String {
+    internal static var disownedBlankId: String {
         // If this client does not have ownership, a
         // "blank" UUID string will be sent to the web
         // app using CaptureJS
@@ -29,15 +29,15 @@ public class Client: NSObject, ClientReceiverProtocol {
     private var appInfo: SKTAppInfo?
     
     // This is used to identify/retrieve a client with a webview
-    public private(set) var webpageURLString: String?
+    internal private(set) var webpageURLString: String?
     
     // This is used to send data back to the current web page
-    public private(set) weak var webview: WKWebView?
+    internal private(set) weak var webview: WKWebView?
     
-    public private(set) var didOpenCapture: Bool = false
+    internal private(set) var didOpenCapture: Bool = false
     
     // Keep track of the capture helper devices that this client has opened.
-    public private(set) var openedDevices: [ClientDeviceHandle : ClientDevice] = [:]
+    internal private(set) var openedDevices: [ClientDeviceHandle : ClientDevice] = [:]
 }
 
 
@@ -52,7 +52,7 @@ public class Client: NSObject, ClientReceiverProtocol {
 
 extension Client {
     
-    @discardableResult public func openWithAppInfo(appInfo: SKTAppInfo, webview: WKWebView) throws -> ClientHandle {
+    @discardableResult internal func openWithAppInfo(appInfo: SKTAppInfo, webview: WKWebView) throws -> ClientHandle {
         // => add new Client Instance to clients list in Maraca
         // => AppInfo Verify ==> TRUE
         // => send device Arrivals if devices connected
@@ -77,7 +77,7 @@ extension Client {
         return handle
     }
     
-    public func open(captureHelperDevice: CaptureHelperDevice, jsonRPCObject: JsonRPCObject) {
+    internal func open(captureHelperDevice: CaptureHelperDevice, jsonRPCObject: JsonRPCObject) {
         let clientDevice = ClientDevice(captureHelperDevice: captureHelperDevice)
         openedDevices[clientDevice.handle] = clientDevice
         
@@ -94,7 +94,7 @@ extension Client {
         changeOwnership(forClientDeviceWith: clientDevice.handle, isOwned: true)
     }
     
-    public func close(handle: Int, responseId: Int) {
+    internal func close(handle: Int, responseId: Int) {
         if handle == self.handle {
             closeAllDevices()
         } else {
@@ -110,11 +110,11 @@ extension Client {
         replyToWebpage(with: responseJsonRpc)
     }
     
-    public func closeAllDevices() {
+    internal func closeAllDevices() {
         openedDevices.removeAll()
     }
     
-    public func closeDevice(with handle: ClientDeviceHandle, responseId: Int) {
+    internal func closeDevice(with handle: ClientDeviceHandle, responseId: Int) {
         guard let _ = openedDevices[handle] else {
             guard let webview = webview else {
                 // The webview should not be nil
@@ -130,7 +130,7 @@ extension Client {
         openedDevices.removeValue(forKey: handle)
     }
     
-    public func changeOwnership(forClientDeviceWith handle: ClientDeviceHandle, isOwned: Bool) {
+    internal func changeOwnership(forClientDeviceWith handle: ClientDeviceHandle, isOwned: Bool) {
         
         let responseJson: [String: Any] = [
             MaracaConstants.Keys.jsonrpc.rawValue: Maraca.jsonRpcVersion ?? Maraca.defaultJsonRpcVersion,
@@ -160,7 +160,7 @@ extension Client {
 
 extension Client {
     
-    public func getProperty(with handle: Int, responseId: Int, property: SKTCaptureProperty) {
+    internal func getProperty(with handle: Int, responseId: Int, property: SKTCaptureProperty) {
         
         if handle == self.handle {
             getProperty(property: property, responseId: responseId) { (result) in
@@ -182,7 +182,7 @@ extension Client {
         }
     }
     
-    public func setProperty(with handle: Int, responseId: Int, property: SKTCaptureProperty) {
+    internal func setProperty(with handle: Int, responseId: Int, property: SKTCaptureProperty) {
         
         if handle == self.handle {
             // TODO
@@ -218,7 +218,7 @@ extension Client {
     
     
     
-    public func getProperty(property: SKTCaptureProperty, responseId: Int, completion: @escaping ClientReceiverCompletionHandler) {
+    internal func getProperty(property: SKTCaptureProperty, responseId: Int, completion: @escaping ClientReceiverCompletionHandler) {
         Maraca.shared.capture?.getProperty(property) { (result, property) in
             
             guard result == .E_NOERROR else {
@@ -259,7 +259,7 @@ extension Client {
         }
     }
     
-    public func setProperty(property: SKTCaptureProperty, responseId: Int, completion: @escaping ClientReceiverCompletionHandler) {
+    internal func setProperty(property: SKTCaptureProperty, responseId: Int, completion: @escaping ClientReceiverCompletionHandler) {
         
         Maraca.shared.capture?.setProperty(property) { (result, property) in
             
@@ -300,15 +300,15 @@ extension Client {
 
 extension Client {
     
-    public func hasPreviouslyOpenedDevice(with deviceGuid: String) -> Bool {
+    internal func hasPreviouslyOpenedDevice(with deviceGuid: String) -> Bool {
         return Array(openedDevices.values).filter { return $0.guid == deviceGuid }.count > 0
     }
     
-    public func getClientDevice(for device: CaptureHelperDevice) -> ClientDevice? {
+    internal func getClientDevice(for device: CaptureHelperDevice) -> ClientDevice? {
         return Array(openedDevices.values).filter { return $0.guid == device.deviceInfo.guid }.first
     }
     
-    public func resume() {
+    internal func resume() {
         guard didOpenCapture == true else {
             fatalError()
         }
@@ -327,7 +327,7 @@ extension Client {
         // Send device arrivals, etc.
     }
     
-    public func suspend() {
+    internal func suspend() {
         guard didOpenCapture == true else {
             fatalError()
         }
@@ -344,12 +344,12 @@ extension Client {
     
     // For responding back to a web page that has
     // opened a capture with a client, etc.
-    public func replyToWebpage(with jsonRpc: [String: Any]) {
+    internal func replyToWebpage(with jsonRpc: [String: Any]) {
         sendJsonRpcToWebpage(jsonRpc: jsonRpc, javascriptFunctionName: "window.maraca.replyJsonRpc('")
     }
     
     // For sending information to the web page
-    public func notifyWebpage(with jsonRpc: [String: Any]) {
+    internal func notifyWebpage(with jsonRpc: [String: Any]) {
         sendJsonRpcToWebpage(jsonRpc: jsonRpc, javascriptFunctionName: "window.maraca.receiveJsonRpc('")
     }
     

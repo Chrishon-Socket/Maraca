@@ -15,7 +15,7 @@ import SKTCapture
 // maintains references to which CaptureHelperDevices have
 // been opened by which Client objects
 
-public struct ClientDevice: ClientReceiverProtocol {
+internal struct ClientDevice: ClientReceiverProtocol {
     
     // MARK: - Variables
     
@@ -44,7 +44,7 @@ public struct ClientDevice: ClientReceiverProtocol {
     
     // MARK: - Functions
     
-    public func getProperty(property: SKTCaptureProperty, responseId: Int, completion: @escaping ClientReceiverCompletionHandler) {
+    internal func getProperty(property: SKTCaptureProperty, responseId: Int, completion: @escaping ClientReceiverCompletionHandler) {
         captureHelperDevice.getProperty(property) { (result, property) in
             
             guard result == .E_NOERROR else {
@@ -85,7 +85,7 @@ public struct ClientDevice: ClientReceiverProtocol {
         }
     }
     
-    public func setProperty(property: SKTCaptureProperty, responseId: Int, completion: @escaping ClientReceiverCompletionHandler) {
+    internal func setProperty(property: SKTCaptureProperty, responseId: Int, completion: @escaping ClientReceiverCompletionHandler) {
         
         captureHelperDevice.setProperty(property) { (result, property) in
             
