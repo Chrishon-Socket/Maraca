@@ -541,4 +541,109 @@ internal protocol ClientConformanceProtocol where Self: Client {
     
     
     init()
+    
+    
+    
+    
+    
+    
+    // => add new Client Instance to clients list in Maraca
+    // => AppInfo Verify ==> TRUE
+    // => send device Arrivals if devices connected
+    // => return a handle
+    
+    /**
+     Establishes link between web application running CaptureJS and Maraca
+     The return value is used to uniquely identify a web application page, allowing for operations to be performed
+     
+     Throws error if the appInfo cannot be verified using the AppID property
+     
+     Sends device arrival notifications if devices are connected and returns a unique identifier for the Client
+     
+     - Parameters:
+        - appInfo: `SKTAppInfo` object constructed from incoming JSON
+        - webview: The `WKWebView` that sent the JSON through script message handlers
+     
+     - Returns:
+        - Returns a unique identifier for the Client if open was successful
+     */
+    @discardableResult func openWithAppInfo(appInfo: SKTAppInfo, webview: WKWebView) throws -> ClientHandle
+        
+    /**
+     Called as a result of the web application requesting "ownership" of CaptureHelperDevice
+     Opened devices can now perform get or set requests on SKTCaptureProperties and return
+     the response to the web application
+     
+     - Parameters:
+        - captureHelperDevice: Wrapper for the actual Bluetooth device
+        - jsonRPCObject: Object conforming to the JSON-RPC format. Used to pass relevant data between web application and Maraca
+     */
+    func open(captureHelperDevice: CaptureHelperDevice, jsonRPCObject: JsonRPCObject)
+    
+    /**
+     Closes a Client object with the maching unique identifier and returns a response to the web application
+     
+     - Parameters:
+        - handle: The unique identifier of the Client
+        - responseId: Response unique identifier interpreted by web application using CaptureJS
+     */
+    func close(handle: ClientHandle, responseId: Int)
+    
+    /// Closes all currently opened devices
+    func closeAllDevices()
+    
+    /**
+     Relinquishes or assumes ownership for a bluetooth device
+     
+     - Parameters:
+        - handle: The unique identifier for the bluetooth device
+        - isOwned: Determines whether to relinquish or assume ownership of the device
+     */
+    func changeOwnership(forClientDeviceWith handle: ClientDeviceHandle, isOwned: Bool)
+    
+    /**
+     Returns whether a device with GUID has been opened by the Client
+     
+     - Parameters:
+        - deviceGUID: The GUID of the device. Provided through `SKTCapture` framework
+     
+     - Returns:
+        - Returns whether a device with GUID has been opened by the Client
+     */
+    func hasPreviouslyOpenedDevice(with deviceGuid: String) -> Bool
+    
+    /**
+     Returns an internal Wrapper object for the device if one already exists and has been opened
+     
+     - Parameters:
+        - device: The `SKTCapture` wrapper for the bluetooth device
+     
+     - Returns:
+        - An internal wrapper for the bluetooth device
+     */
+    func getClientDevice(for device: CaptureHelperDevice) -> ClientDevice?
+    
+    /// Resumes responses to get and set requests
+    func resume()
+    
+    /// Suspends responses to get and set requests
+    func suspend()
+    
+    /**
+     Sends responses containing information to a web application. Often responses contain requested data from get or set requests
+     
+     Additionally, the response may contain errors if any were encountered
+     
+     - Parameters:
+        - jsonRpc: The "packet" containing the requested data or errors
+     */
+    func replyToWebpage(with jsonRpc: JSONDictionary)
+    
+    /**
+    Notifies a web application of events such as Capture events (errors, device arrival, etc.)
+    
+    - Parameters:
+       - jsonRpc: The "packet" containing the data or errors
+    */
+    func notifyWebpage(with jsonRpc: JSONDictionary)
 }
