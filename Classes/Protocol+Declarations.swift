@@ -167,7 +167,7 @@ internal struct ErrorResponse: ErrorResponseProtocol {
 /// Errors that are thrown during the conversion of an
 /// SKTProperty to a json dictionary
 
-public enum MaracaError: Error {
+internal enum MaracaError: Error {
     
     case invalidAppInfo(String)
     
