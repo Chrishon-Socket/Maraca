@@ -14,7 +14,7 @@ protocol JavascriptMessageInterpreterDelegate: class {
     func interpreter(_ interpreter: JavascriptMessageInterpreter, didClose client: Client, with handle: ClientHandle)
 }
 
-
+/// Interprets incoming messages from web application
 class JavascriptMessageInterpreter: NSObject {
     
     private weak var delegate: JavascriptMessageInterpreterDelegate?

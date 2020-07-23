@@ -23,11 +23,7 @@ public final class Maraca: NSObject {
     
     public private(set) var clientsList: [ClientHandle : Client] = [:]
     
-    public private(set) var activeClient: Client? {
-        didSet {
-            activeClientManager.update(activeClient: activeClient)
-        }
-    }
+    public private(set) var activeClient: Client?
     public private(set) var activeClientIndexPath: IndexPath?
     
     public private(set) var previousActiveClient: Client?
@@ -359,6 +355,13 @@ extension Maraca {
 
 
 
+
+
+
+
+
+// MARK: - ActiveClientManagerDelegate
+
 extension Maraca: ActiveClientManagerDelegate {
     
     func activeClient(_ manager: ActiveClientManager, didNotifyArrivalFor device: CaptureHelperDevice, result: SKTResult) {
@@ -383,6 +386,7 @@ extension Maraca: ActiveClientManagerDelegate {
 
 
 
+// MARK: - JavascriptMessageInterpreterDelegate
 
 extension Maraca: JavascriptMessageInterpreterDelegate {
     
