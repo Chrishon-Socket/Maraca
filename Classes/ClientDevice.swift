@@ -15,17 +15,20 @@ import SKTCapture
 // maintains references to which CaptureHelperDevices have
 // been opened by which Client objects
 
-public struct ClientDevice: ClientReceiverProtocol {
+internal struct ClientDevice: ClientReceiverProtocol {
     
     // MARK: - Variables
     
+    /// Wrapper for bluetooth device
     private let captureHelperDevice: CaptureHelperDevice
     
-    var guid: String? {
+    /// GUID of the bluetooth device
+    internal var guid: String? {
         return captureHelperDevice.deviceInfo.guid
     }
     
-    let handle: Int
+    /// Unique identifer for the ClientDevice object
+    internal let handle: ClientHandle
     
     
     
@@ -44,13 +47,13 @@ public struct ClientDevice: ClientReceiverProtocol {
     
     // MARK: - Functions
     
-    public func getProperty(property: SKTCaptureProperty, responseId: Int, completion: @escaping ClientReceiverCompletionHandler) {
+    internal func getProperty(property: SKTCaptureProperty, responseId: Int, completion: @escaping ClientReceiverCompletionHandler) {
         captureHelperDevice.getProperty(property) { (result, property) in
             
             guard result == .E_NOERROR else {
                 
                 let errorMessage = "There was an error with getting property from the CaptureHelperDevice. Error: \(result)"
-                let errorResponseJsonRpc = Maraca.constructErrorResponse(error: result,
+                let errorResponseJsonRpc = Utility.constructErrorResponse(error: result,
                                                                          errorMessage: errorMessage,
                                                                          handle: self.handle,
                                                                          responseId: responseId)
@@ -75,7 +78,7 @@ public struct ClientDevice: ClientReceiverProtocol {
                 // Send an error response Json back to the web page
                 // if a dictionary cannot be constructed from
                 // the resulting SKTCaptureProperty
-                let errorResponseJsonRpc = Maraca.constructErrorResponse(error: SKTResult.E_INVALIDPARAMETER,
+                let errorResponseJsonRpc = Utility.constructErrorResponse(error: SKTResult.E_INVALIDPARAMETER,
                                                                          errorMessage: error.localizedDescription,
                                                                          handle: self.handle,
                                                                          responseId: responseId)
@@ -85,14 +88,14 @@ public struct ClientDevice: ClientReceiverProtocol {
         }
     }
     
-    public func setProperty(property: SKTCaptureProperty, responseId: Int, completion: @escaping ClientReceiverCompletionHandler) {
+    internal func setProperty(property: SKTCaptureProperty, responseId: Int, completion: @escaping ClientReceiverCompletionHandler) {
         
         captureHelperDevice.setProperty(property) { (result, property) in
             
             guard result == .E_NOERROR else {
                 
                 let errorMessage = "There was an error with setting property of the CaptureHelperDevice. Error: \(result)"
-                let errorResponseJsonRpc = Maraca.constructErrorResponse(error: result,
+                let errorResponseJsonRpc = Utility.constructErrorResponse(error: result,
                                                                          errorMessage: errorMessage,
                                                                          handle: self.handle,
                                                                          responseId: responseId)

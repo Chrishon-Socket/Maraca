@@ -12,44 +12,85 @@ import WebKit.WKScriptMessage
 // enums and utility structs used within Maraca
 
 
+// MARK: - MaracaDelegate
+
 /// Public optional delegate used by Maraca class.
 @objc public protocol MaracaDelegate: class {
     
-    /// Notifies the delegate that a CaptureHelper device has been connected
-    /// Use this to refresh UI in iOS application
-    ///
-    /// Even if using Maraca and SKTCapture simultaneously, this function will
-    /// only be called once, depending on which entity is set as the Capture delegate.
+    /**
+    Notifies the delegate that a CaptureHelper device has been connected
+    Use this to refresh UI in iOS application
+     
+    Even if using Maraca and SKTCapture simultaneously, this function will
+    only be called once, depending on which entity is set as the Capture delegate.
+     
+     - Parameters:
+        - maraca: The Maraca object
+        - device: Wrapper for the actual Bluetooth device
+        - result: The result and/or possible error code for the notification
+     */
     @objc optional func maraca(_ maraca: Maraca, didNotifyArrivalFor device: CaptureHelperDevice, result: SKTResult)
     
-    /// Notifies the delegate that a CaptureHelper device has been disconnected
-    /// Use this to refresh UI in iOS application
-    ///
-    /// Even if using Maraca and SKTCapture simultaneously, this function will
-    /// only be called once, depending on which entity is set as the Capture delegate.
+    /**
+     Notifies the delegate that a CaptureHelper device has been disconnected
+     Use this to refresh UI in iOS application
+     
+     Even if using Maraca and SKTCapture simultaneously, this function will
+     only be called once, depending on which entity is set as the Capture delegate.
+     
+     - Parameters:
+         - maraca: The Maraca object
+         - device: Wrapper for the actual Bluetooth device
+         - result: The result and/or possible error code for the notification
+     */
     @objc optional func maraca(_ maraca: Maraca, didNotifyRemovalFor device: CaptureHelperDevice, result: SKTResult)
     
-    /// Notifies the delegate that the battery level of aa CaptureHelperDevice has changed
-    /// Use this to refresh UI in iOS application
-    ///
-    /// Even if using Maraca and SKTCapture simultaneously, this function will
-    /// only be called once, depending on which entity is set as the Capture delegate.
+    /**
+     Notifies the delegate that the battery level of aa CaptureHelperDevice has changed
+     Use this to refresh UI in iOS application
+     
+     Even if using Maraca and SKTCapture simultaneously, this function will
+     only be called once, depending on which entity is set as the Capture delegate.
+     
+     - Parameters:
+         - maraca: The Maraca object
+         - value: Current battery level for the device
+         - device: Wrapper for the actual Bluetooth device
+     */
     @objc optional func maraca(_ maraca: Maraca, batteryLevelDidChange value: Int, for device: CaptureHelperDevice)
     
-    /// Notifies the delegate that a new Client (which represents a web application using CaptureJS)
-    /// has been opened
+    /**
+     Notifies the delegate that a new Client (which represents a web application using CaptureJS)
+     has been opened
+     
+     - Parameters:
+         - maraca: The Maraca object
+         - client: Object used to represent the current web application page using CaptureJS
+     */
     @objc optional func maraca(_ maraca: Maraca, webviewDidOpenCaptureWith client: Client)
     
-    /// Notifies the delegate that a Client (which represents a web application using CaptureJS)
-    /// has been closed
+    /**
+     Notifies the delegate that a Client (which represents a web application using CaptureJS)
+     has been closed
+     
+     - Parameters:
+         - maraca: The Maraca object
+         - client: Object used to represent the current web application page using CaptureJS
+     */
     @objc optional func maraca(_ maraca: Maraca, webviewDidCloseCaptureWith client: Client)
     
-    /// Notifies the delegate that a script message has been received
-    /// that is not related to Maraca.
-    ///
-    /// This delegate function is only called if custom Javascript Message Handlers
-    /// are provided during initialization in this function:
-    /// `observeJavascriptMessageHandlers(_ customMessageHandlers: [String]? = nil)`
+    /**
+     Notifies the delegate that a script message has been received
+     that is not related to Maraca.
+     
+     This delegate function is only called if custom Javascript Message Handlers
+     are provided during initialization in this function:
+     `observeJavascriptMessageHandlers(_ customMessageHandlers: [String]? = nil)`
+     
+     - Parameters:
+         - maraca: The Maraca object
+         - scriptMessage: A WKScriptMessage object contains information about a message sent from a webpage.
+     */
     func maraca(_ maraca: Maraca, didReceive scriptMessage: WKScriptMessage)
     
 }
@@ -65,18 +106,17 @@ internal extension Bundle {
     }
 }
 
+/// Dictionary containing key-value pairs from incoming JSON responses or outgoing requests
+public typealias JSONDictionary = [String: Any]
 
-/// New Swift 5.0 property to be used in completion handlers that
-/// providers either a .success or .failure.
-/// The first argument is the success result, the second is the failure result
-public typealias ResultResponse = Result<[String: Any], ErrorResponse>
+/// Result of get or set requests. Returns JSON dictionary for success and error for failure
+internal typealias ResultResponse = Result<JSONDictionary, ErrorResponse>
 
-/// Typealias for common completion handler
-public typealias ClientReceiverCompletionHandler = (ResultResponse) -> ()
+
 
 /// Anonymous closure that takes the ResultResponse as a parameter
 /// and returns a json (whether for failure or success)
-public let resultDictionary: (ResultResponse) -> [String: Any] = { (result) in
+internal let resultDictionary: (ResultResponse) -> JSONDictionary = { (result) in
     switch result {
     case .failure(let errorResponse):
         return errorResponse.json
@@ -89,12 +129,29 @@ public let resultDictionary: (ResultResponse) -> [String: Any] = { (result) in
 
 
 
+/// Typealias for common completion handler
+internal typealias ClientReceiverCompletionHandler = (ResultResponse) -> ()
 
-
-/// A protocol adopted by both the Client and ClientDevice objects
-/// It provides a set of functions/properties that both objects must implement
-public protocol ClientReceiverProtocol {
+/// Protocol adopted by both the Client and ClientDevice objects for performing get and set requests
+internal protocol ClientReceiverProtocol {
+    /**
+     Performs get property request and returns response in a JSONDictionary if successful or an ErrorResponse otherwise
+     
+     - Parameters:
+        - property: The `SKTCaptureProperty` to be requested
+        - responseId: The unique identifier from the web application making the request
+        - completion: Completion handler for returning result of get request
+     */
     func getProperty(property: SKTCaptureProperty, responseId: Int, completion: @escaping ClientReceiverCompletionHandler)
+    
+    /**
+    Performs set property request and returns response in a JSONDictionary if successful or an ErrorResponse otherwise
+    
+    - Parameters:
+       - property: The `SKTCaptureProperty` to be requested
+       - responseId: The unique identifier from the web application making the request
+       - completion: Completion handler for returning result of set request
+    */
     func setProperty(property: SKTCaptureProperty, responseId: Int, completion: @escaping ClientReceiverCompletionHandler)
 }
 
@@ -103,17 +160,19 @@ public protocol ClientReceiverProtocol {
 
 
 
-/// The ErrorResponse struct is used to return a json
+/// Protocol adopted by ErrorResponse used to return a json
 /// dictionary containing information on any errors
 /// e.g. attempting to get a property, but an SKTResult that
 /// is not .E_NOERROR was returned.
 private protocol ErrorResponseProtocol: LocalizedError {
-    var json: [String: Any] { get }
+    var json: JSONDictionary { get }
 }
 
-public struct ErrorResponse: ErrorResponseProtocol {
+/// Returns JSONDictionary containing information on errors
+/// encountered during a get or set request
+internal struct ErrorResponse: ErrorResponseProtocol {
     public private(set) var json: [String : Any]
-    init(json: [String: Any]) {
+    init(json: JSONDictionary) {
         self.json = json
     }
 }
@@ -121,35 +180,37 @@ public struct ErrorResponse: ErrorResponseProtocol {
 
 
 
+// MARK: - MaracaError
 
 /// Errors that are thrown during the conversion of an
 /// SKTProperty to a json dictionary
-
-public enum MaracaError: Error {
+internal enum MaracaError: Error {
     
+    /// The SKTAppInfo object contains invalid information.
+    /// Likely cause is that `appInfo.verify(withBundleId:)` failed
     case invalidAppInfo(String)
     
-    // The SKTCaptureProperty has mismatching type and values
-    // e.g. The type == .array, but .arrayValue == nil
+    /// The SKTCaptureProperty has mismatching type and values
+    /// e.g. The type == .array, but .arrayValue == nil
     case malformedCaptureProperty(String)
     
-    // The JSON RPC object is missing an important key-value pair
-    // e.g. The dictionary was expected to contain information
-    // to do a setProperty
+    /// The JSON RPC object is missing an important key-value pair
+    /// e.g. The dictionary was expected to contain information
+    /// to do a setProperty
     case malformedJson(String)
     
-    // The values within the JSON RPC object has the proper
-    // key, but its value is invalid
-    // e.g. The user wants to get the data source from a CaptureHelperDevice,
-    // but the data source Id they provide is not a case in the SKTCaptureDataSourceID enum.
+    /// The values within the JSON RPC object has the proper
+    /// key, but its value is invalid
+    /// e.g. The user wants to get the data source from a CaptureHelperDevice,
+    /// but the data source Id they provide is not a case in the SKTCaptureDataSourceID enum.
     case invalidKeyValuePair(String)
     
-    // The property type is not supported at this time
-    // e.g. The .object and .enum type
+    /// The property type is not supported at this time
+    /// e.g. The .object and .enum type
     case propertyTypeNotSupported(String)
     
-    // The current installed version of Capture is not
-    // compatible with the version sent from the web application using CaptureJS
+    /// The current installed version of Capture is not
+    /// compatible with the version sent from the web application using CaptureJS
     case outdatedVersion(String)
 }
 
@@ -160,9 +221,66 @@ public enum MaracaError: Error {
 
 
 
-/// unique identifier for a Client. The value will be the integer value of:
-/// "The interval between the date value and 00:00:00 UTC on 1 January 1970."
-public typealias ClientHandle = Int
+
+
+
+
+
+
+// MARK: - ActiveClientManagerDelegate
+
+@objc internal protocol ActiveClientManagerDelegate: class {
+    
+    /**
+    Notifies the delegate that a CaptureHelper device has been connected
+    Use this to refresh UI in iOS application
+     
+    Even if using Maraca and SKTCapture simultaneously, this function will
+    only be called once, depending on which entity is set as the Capture delegate.
+     
+     - Parameters:
+        - maraca: The ActiveClientManager object
+        - device: Wrapper for the actual Bluetooth device
+        - result: The result and/or possible error code for the notification
+     */
+    @objc optional func activeClient(_ manager: ActiveClientManager, didNotifyArrivalFor device: CaptureHelperDevice, result: SKTResult)
+    
+    /**
+     Notifies the delegate that a CaptureHelper device has been disconnected
+     Use this to refresh UI in iOS application
+     
+     Even if using Maraca and SKTCapture simultaneously, this function will
+     only be called once, depending on which entity is set as the Capture delegate.
+     
+     - Parameters:
+         - maraca: The ActiveClientManager object
+         - device: Wrapper for the actual Bluetooth device
+         - result: The result and/or possible error code for the notification
+     */
+    @objc optional func activeClient(_ manager: ActiveClientManager, didNotifyRemovalFor device: CaptureHelperDevice, result: SKTResult)
+    
+    /**
+     Notifies the delegate that the battery level of aa CaptureHelperDevice has changed
+     Use this to refresh UI in iOS application
+     
+     Even if using Maraca and SKTCapture simultaneously, this function will
+     only be called once, depending on which entity is set as the Capture delegate.
+     
+     - Parameters:
+         - maraca: The ActiveClientManager object
+         - value: Current battery level for the device
+         - device: Wrapper for the actual Bluetooth device
+     */
+    @objc optional func activeClient(_ manager: ActiveClientManager, batteryLevelDidChange value: Int, for device: CaptureHelperDevice)
+}
+
+
+
+
+
+
+
+
 
 
 
@@ -182,19 +300,27 @@ public typealias ClientDeviceHandle = Int
 
 
 
-
+// MARK: - String
 
 extension String {
-    // In some cases, data returned from a CaptureHelperDevice will contain
-    // escaped characters (e.g. \n or \r)
-    // Strings containing these characters will result in a Javascript exception
-    // due to an unterminating string.
-    // Such characters are allowed in Swift, but often cause this exception when
-    // sent to a web page or server of some kind.
-    // This extension adds an extra backslash to the response json before it is sent.
-    // When this value is finally interpreted by the web page, the extra backslash is removed,
-    // revealing the original string-value.
-    
+     
+    /**
+     Maintains "directory" of possibly encountered characters that need to be escaped.
+     Otherwise, errors may occur
+     
+     In some cases, data returned from a CaptureHelperDevice will contain
+     escaped characters (e.g. \n or \r)
+     
+     Strings containing these characters will result in a Javascript exception
+     due to an unterminating string.
+     
+     Such characters are allowed in Swift, but often cause this exception when
+     sent to a web page or server of some kind.
+     
+     This extension adds an extra backslash to the response json before it is sent.
+     When this value is finally interpreted by the web page, the extra backslash is removed,
+     revealing the original string-value.
+     */
     enum escapeCharacters: String, CaseIterable {
         case nulTerminatoor     = "\0"
         case horizontalTab      = "\t"
@@ -205,6 +331,7 @@ extension String {
         case backslash          = "\\"
     }
     
+    /// Returns String without error-causing characters that need to be escaped
     var escaped: String {
         let entities = [escapeCharacters.nulTerminatoor.rawValue:   "\\0",
                         escapeCharacters.horizontalTab.rawValue:    "\\t",
@@ -220,6 +347,7 @@ extension String {
             }
     }
     
+    /// Determines whether error-causing characters that need to be escaped are contained in the String
     func containsEscapeCharacters() -> Bool {
         let characters = escapeCharacters.allCases.map ({ $0.rawValue }).joined()
         let characterSet = CharacterSet(charactersIn: characters)
@@ -241,7 +369,14 @@ extension String {
 
 extension SKTCaptureProperty {
     
-    public func jsonFromGetProperty(with responseId: Int) throws -> [String: Any] {
+    /**
+     Builds a JSONDictionary from the existing SKTCaptureProperty,
+     which may be transferred to web application using CaptureJS
+     
+     - Parameters:
+        - responseId: The unique identifier from the web application making the request
+     */
+    public func jsonFromGetProperty(with responseId: Int) throws -> JSONDictionary {
         
         // TODO
         // Some of these properties are iOS-specific
@@ -330,7 +465,12 @@ extension SKTCaptureProperty {
     
     
     
+    /**
+    Sets/Updates an existing SKTCaptureProperty value
     
+    - Parameters:
+       - valueFromJSON: The value contained within a JSONDictionary coming from web application using CaptureJS
+    */
     public func setPropertyValue(using valueFromJson: Any) throws {
         switch type {
         case .array:
@@ -349,8 +489,8 @@ extension SKTCaptureProperty {
             self.byteValue = valueFromJson as! Int8
         case .dataSource:
             
-            guard let dictionary = valueFromJson as? [String: Any] else {
-                throw MaracaError.malformedJson("The value from the JSON was expected to be a dictionary of type [String: Any], instead it is: \(valueFromJson)")
+            guard let dictionary = valueFromJson as? JSONDictionary else {
+                throw MaracaError.malformedJson("The value from the JSON was expected to be a dictionary of type JSONDictionary, instead it is: \(valueFromJson)")
             }
             
             guard
@@ -359,7 +499,7 @@ extension SKTCaptureProperty {
                 let name = dictionary[MaracaConstants.Keys.name.rawValue] as? String,
                 let flags = dictionary[MaracaConstants.Keys.flags.rawValue] as? Int
                 else {
-                    throw MaracaError.malformedJson("The value from the JSON was a dictionary of type [String: Any], but it did not contain all the necessary key-value pairs necessary for an SKTCaptureDataSource object")
+                    throw MaracaError.malformedJson("The value from the JSON was a dictionary of type JSONDictionary, but it did not contain all the necessary key-value pairs necessary for an SKTCaptureDataSource object")
             }
             
             let dataSource = SKTCaptureDataSource()
@@ -387,8 +527,8 @@ extension SKTCaptureProperty {
             self.uLongValue = valueFromJson as! UInt
         case .version:
             
-            guard let dictionary = valueFromJson as? [String: Any] else {
-                throw MaracaError.malformedJson("The value from the JSON was expected to be a dictionary of type [String: Any], instead it is: \(valueFromJson)")
+            guard let dictionary = valueFromJson as? JSONDictionary else {
+                throw MaracaError.malformedJson("The value from the JSON was expected to be a dictionary of type JSONDictionary, instead it is: \(valueFromJson)")
             }
             
             guard
@@ -402,7 +542,7 @@ extension SKTCaptureProperty {
                 let hour = dictionary[MaracaConstants.Keys.hour.rawValue] as? Int,
                 let minute = dictionary[MaracaConstants.Keys.minor.rawValue] as? Int
                 else {
-                    throw MaracaError.malformedJson("The value from the JSON was a dictionary of type [String: Any], but it did not contain all the necessary key-value pairs necessary for an SKTCaptureVersion object")
+                    throw MaracaError.malformedJson("The value from the JSON was a dictionary of type JSONDictionary, but it did not contain all the necessary key-value pairs necessary for an SKTCaptureVersion object")
             }
             
             let version = SKTCaptureVersion()
@@ -420,4 +560,149 @@ extension SKTCaptureProperty {
         default: break
         }
     }
+}
+
+
+
+
+
+
+
+
+
+/// unique identifier for a Client. The value will be the integer value of
+/// the interval between 00:00:00 UTC on 1 January 1970 and the current date
+public typealias ClientHandle = Int
+
+// MARK: - ClientConformanceProtocol
+
+internal protocol ClientConformanceProtocol where Self: Client {
+    
+    /// Unique identifier for client
+    var handle: ClientHandle! { get }
+    
+    /// Used to denote which client currently has active ownership of BLE devices
+    var ownershipId: String { get }
+    
+    var appInfo: SKTAppInfo? { get }
+    
+    /// Used to identify/retrieve a client with a webview
+    var webpageURLString: String? { get }
+    
+    /// Webview used to send and receive data to the current web application page using CaptureJS
+    var webview: WKWebView? { get }
+    
+    /// Returns whether this Client has opened Capture
+    var didOpenCapture: Bool { get }
+    
+    /// Keeps track of the capture helper devices that this client has opened.
+    var openedDevices: [ClientDeviceHandle : ClientDevice] { get }
+    
+    
+    init()
+    
+    
+    
+    
+    
+    
+    // => add new Client Instance to clients list in Maraca
+    // => AppInfo Verify ==> TRUE
+    // => send device Arrivals if devices connected
+    // => return a handle
+    
+    /**
+     Establishes link between web application running CaptureJS and Maraca
+     The return value is used to uniquely identify a web application page, allowing for operations to be performed
+     
+     Throws error if the appInfo cannot be verified using the AppID property
+     
+     Sends device arrival notifications if devices are connected and returns a unique identifier for the Client
+     
+     - Parameters:
+        - appInfo: `SKTAppInfo` object constructed from incoming JSON
+        - webview: The `WKWebView` that sent the JSON through script message handlers
+     
+     - Returns:
+        - Returns a unique identifier for the Client if open was successful
+     */
+    @discardableResult func openWithAppInfo(appInfo: SKTAppInfo, webview: WKWebView) throws -> ClientHandle
+        
+    /**
+     Called as a result of the web application requesting "ownership" of CaptureHelperDevice
+     Opened devices can now perform get or set requests on SKTCaptureProperties and return
+     the response to the web application
+     
+     - Parameters:
+        - captureHelperDevice: Wrapper for the actual Bluetooth device
+        - jsonRPCObject: Object conforming to the JSON-RPC format. Used to pass relevant data between web application and Maraca
+     */
+    func open(captureHelperDevice: CaptureHelperDevice, jsonRPCObject: JsonRPCObject)
+    
+    /**
+     Closes a Client object with the maching unique identifier and returns a response to the web application
+     
+     - Parameters:
+        - handle: The unique identifier of the Client
+        - responseId: Response unique identifier interpreted by web application using CaptureJS
+     */
+    func close(handle: ClientHandle, responseId: Int)
+    
+    /// Closes all currently opened devices
+    func closeAllDevices()
+    
+    /**
+     Relinquishes or assumes ownership for a bluetooth device
+     
+     - Parameters:
+        - handle: The unique identifier for the bluetooth device
+        - isOwned: Determines whether to relinquish or assume ownership of the device
+     */
+    func changeOwnership(forClientDeviceWith handle: ClientDeviceHandle, isOwned: Bool)
+    
+    /**
+     Returns whether a device with GUID has been opened by the Client
+     
+     - Parameters:
+        - deviceGUID: The GUID of the device. Provided through `SKTCapture` framework
+     
+     - Returns:
+        - Returns whether a device with GUID has been opened by the Client
+     */
+    func hasPreviouslyOpenedDevice(with deviceGuid: String) -> Bool
+    
+    /**
+     Returns an internal Wrapper object for the device if one already exists and has been opened
+     
+     - Parameters:
+        - device: The `SKTCapture` wrapper for the bluetooth device
+     
+     - Returns:
+        - An internal wrapper for the bluetooth device
+     */
+    func getClientDevice(for device: CaptureHelperDevice) -> ClientDevice?
+    
+    /// Resumes responses to get and set requests
+    func resume()
+    
+    /// Suspends responses to get and set requests
+    func suspend()
+    
+    /**
+     Sends responses containing information to a web application. Often responses contain requested data from get or set requests
+     
+     Additionally, the response may contain errors if any were encountered
+     
+     - Parameters:
+        - jsonRpc: The "packet" containing the requested data or errors
+     */
+    func replyToWebpage(with jsonRpc: JSONDictionary)
+    
+    /**
+    Notifies a web application of events such as Capture events (errors, device arrival, etc.)
+    
+    - Parameters:
+       - jsonRpc: The "packet" containing the data or errors
+    */
+    func notifyWebpage(with jsonRpc: JSONDictionary)
 }

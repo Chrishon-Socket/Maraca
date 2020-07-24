@@ -40,11 +40,11 @@ public final class Maraca: NSObject {
     public private(set) var webViewConfiguration = WKWebViewConfiguration()
     private var userContentController = WKUserContentController()
     
-    private enum MaracaMessageHandlers: String, CaseIterable {
+    internal enum MaracaMessageHandlers: String, CaseIterable {
         case maracaSendJsonRpc
     }
     
-    private enum CaptureJSMethod: String {
+    internal enum CaptureJSMethod: String {
         case openClient = "openclient"
         case openDevice = "opendevice"
         case close = "close"
@@ -52,6 +52,9 @@ public final class Maraca: NSObject {
         case setProperty = "setproperty"
     }
     
+    private lazy var activeClientManager = ActiveClientManager(delegate: self)
+    
+    private lazy var javascriptInterpreter = JavascriptMessageInterpreter(delegate: self)
     
     
     
@@ -207,7 +210,7 @@ extension Maraca {
             activeClient = clientAtIndexPath
             
             activeClient?.resume()
-            self.capture?.pushDelegate(self)
+            assumeCaptureDelegate()
         }
     }
     
@@ -219,7 +222,7 @@ extension Maraca {
         
         activeClientIndexPath = IndexPath(item: Int(arrayElementIndex), section: 0)
         
-        self.capture?.pushDelegate(self)
+        assumeCaptureDelegate()
         
         // If there was an active client previously, and this previous client
         // is not the one that will be activated, then the resume() function
@@ -314,7 +317,7 @@ extension Maraca: WKScriptMessageHandler {
     
     public func userContentController(_ userContentController: WKUserContentController, didReceive message: WKScriptMessage) {
         
-        if didReceiveCaptureJSMessage(message: message) {
+        if javascriptInterpreter.didReceiveCaptureJSMessage(message: message) {
             return
         } else {
             
@@ -323,598 +326,7 @@ extension Maraca: WKScriptMessageHandler {
             delegate?.maraca(self, didReceive: message)
         }
     }
-    
-    private func didReceiveCaptureJSMessage(message: WKScriptMessage) -> Bool {
-        
-        guard let messageBody = message.body as? String, let webview = message.webView else {
-            return false
-        }
-        
-        guard let messageHandler = MaracaMessageHandlers(rawValue: message.name) else {
-            // Enum initializer is optional by default
-            // If we don't unwrap, Xcode will complain
-            // The initializer is optional because if it receives a `message.name` String that
-            // was not specified in the enum, it will return nil.
-            //
-            // .... In other words, the web page is sending a Javascript message that we did not implement yet
-            return false
-        }
-        
-        switch messageHandler {
-        case .maracaSendJsonRpc:
-            
-            guard let dictionary = Maraca.convertToDictionary(text: messageBody) else {
-                return false
-            }
-            
-            let jsonRPCObject = JsonRPCObject(dictionary: dictionary)
-            Maraca.jsonRpcVersion = jsonRPCObject.jsonrpc
-            
-            guard
-                let method = jsonRPCObject.method,
-                let captureJSMethod = CaptureJSMethod(rawValue: method)
-                else {
-                    DebugLogger.shared.addDebugMessage("\(String(describing: type(of: self))) - Unable to build CaptureJSMethod enum value. message body: \(messageBody)\n")
-                    DebugLogger.shared.addDebugMessage("\(String(describing: type(of: self))) - dictionary: \(dictionary)\n")
-                    DebugLogger.shared.addDebugMessage("\(String(describing: type(of: self))) - jsonRpcObject: \(jsonRPCObject)\n")
-                    return false
-            }
-            
-            switch captureJSMethod {
-            case CaptureJSMethod.openClient:
-                
-                openClient(with: jsonRPCObject, webview: webview)
-                
-            case CaptureJSMethod.openDevice:
-                
-                openDevice(jsonRPCObject: jsonRPCObject, webview: webview)
-                
-            case CaptureJSMethod.close:
-                
-                close(jsonRPCObject: jsonRPCObject, webview: webview)
-                
-            case CaptureJSMethod.getProperty:
-                
-                getProperty(jsonRPCObject: jsonRPCObject, webview: webview)
-                
-            case CaptureJSMethod.setProperty:
-                
-                setProperty(jsonRPCObject: jsonRPCObject, webview: webview)
-                
-            }
-        }
-        
-        return true
-    }
 }
-
-
-
-
-
-
-
-
-
-
-// MARK: - Switch case functions
-
-extension Maraca {
-    
-    private func openClient(with jsonRPCObject: JsonRPCObject, webview: WKWebView) {
-        
-        guard let appInfoDictionary = jsonRPCObject.getAppInfo() else { return }
-        
-        let appInfo = SKTAppInfo()
-        appInfo.appID = appInfoDictionary[MaracaConstants.Keys.appId.rawValue] as? String
-        appInfo.appKey = appInfoDictionary[MaracaConstants.Keys.appKey.rawValue] as? String
-        appInfo.developerID = appInfoDictionary[MaracaConstants.Keys.developerId.rawValue] as? String
-        
-        openNewClient(with: appInfo, webview: webview) { [weak self] (result) in
-            
-            guard let strongSelf = self else {
-                fatalError()
-            }
-            
-            switch result {
-            case .success(let client):
-                let responseJsonRpc: [String: Any] = [
-                    MaracaConstants.Keys.jsonrpc.rawValue:   jsonRPCObject.jsonrpc ?? Maraca.defaultJsonRpcVersion,
-                    // The spec says "transport-openclient" but the id is expected to be an integer
-                    MaracaConstants.Keys.id.rawValue:        jsonRPCObject.id ?? "transport-openclient",
-                    MaracaConstants.Keys.result.rawValue: [
-                        MaracaConstants.Keys.handle.rawValue: client.handle
-                    ]
-                ]
-                
-                client.replyToWebpage(with: responseJsonRpc)
-                
-                strongSelf.activateClient(client)
-                
-                strongSelf.delegate?.maraca?(strongSelf, webviewDidOpenCaptureWith: client)
-            case .failure(_):
-                
-                let errorResponseJsonRpc = Maraca.constructErrorResponse(error: SKTResult.E_INVALIDAPPINFO,
-                                                                         errorMessage: "The AppInfo parameters are invalid",
-                                                                         handle: nil,
-                                                                         responseId: jsonRPCObject.id as? Int)
-                
-                
-                guard let jsonAsString = Maraca.convertJsonRpcToString(errorResponseJsonRpc) else { return }
-                
-                // Refer to replyJSonRpc and receiveJsonRPC functions
-                // REceive used for when received decoded data
-                // reply for when replying back to web page that you opened the client, set a property etc.
-                
-                var javascript = "window.maraca.replyJsonRpc('"
-                javascript.write(jsonAsString)
-                javascript.write("'); ")
-                
-                webview.evaluateJavaScript(javascript, completionHandler: { (object, error) in
-                    if let error = error {
-                        DebugLogger.shared.addDebugMessage("\(String(describing: type(of: self))) - Error evaluating javascript expression: \(javascript). Error: \(error)\n")
-                    } else {
-                        DebugLogger.shared.addDebugMessage("\(String(describing: type(of: self))) - Successfully evaluated javascript expression: \(javascript)\n")
-                    }
-                })
-                
-            }
-        }
-    }
-    
-    private func openNewClient(with appInfo: SKTAppInfo, webview: WKWebView, completion: ((Result<Client, Error>) -> ())?) {
-        let newClient = Client()
-        
-        do {
-            let clientHandle: ClientHandle = try newClient.openWithAppInfo(appInfo: appInfo, webview: webview)
-            clientsList[clientHandle] = newClient
-            completion?(.success(newClient))
-        } catch let error {
-            completion?(.failure(error))
-        }
-    }
-    
-    private func openDevice(jsonRPCObject: JsonRPCObject, webview: WKWebView) {
-        
-        guard let responseId = jsonRPCObject.id as? Int else {
-            // The user may have still sent the client handle
-            let clientHandle = jsonRPCObject.getParamsValue(for: MaracaConstants.Keys.handle.rawValue) as? Int
-            
-            let errorResponseJsonRpc = Maraca.constructErrorResponse(error: SKTResult.E_INVALIDPARAMETER,
-                                                                     errorMessage: "The id was not specified",
-                                                                     handle: clientHandle,
-                                                                     responseId: nil)
-            activeClient?.replyToWebpage(with: errorResponseJsonRpc)
-            return
-        }
-        
-        guard let clientHandle = jsonRPCObject.getParamsValue(for: MaracaConstants.Keys.handle.rawValue) as? Int else {
-            // The user may have still sent the responseId
-            let responseId = jsonRPCObject.id as? Int
-            Maraca.sendErrorResponse(withError: SKTResult.E_INVALIDHANDLE,
-                                     webView: webview,
-                                     handle: nil,
-                                     responseId: responseId)
-            return
-        }
-        
-        guard let deviceGUID = jsonRPCObject.getParamsValue(for: MaracaConstants.Keys.guid.rawValue) as? String else {
-            Maraca.sendErrorResponse(withError: SKTResult.E_INVALIDPARAMETER,
-                                     webView: webview,
-                                     handle: clientHandle,
-                                     responseId: responseId)
-            return
-        }
-        
-        
-        
-        guard let client = clientsList[clientHandle] else {
-            Maraca.sendErrorResponse(withError: SKTResult.E_INVALIDHANDLE,
-                                     webView: webview,
-                                     handle: clientHandle,
-                                     responseId: responseId)
-            return
-        }
-        
-        // Confirm that CaptureHelper has still opened the device
-        
-        // First, combine all CaptureHelperDevices and CaptureHelperDeviceManagers
-        // into a single array
-        if let deviceManagers = capture?.getDeviceManagers(), let devices = capture?.getDevices() {
-            let allCaptureDevices = deviceManagers + devices
-            
-            // Then filter through this combined array to find
-            // the device with this GUID
-            if let captureHelperDevice = allCaptureDevices.filter ({ $0.deviceInfo.guid == deviceGUID }).first {
-                
-                // Finally, open this device
-                client.open(captureHelperDevice: captureHelperDevice, jsonRPCObject: jsonRPCObject)
-                
-                // Change ownership of this device from the previously active client
-                // if that client previously had ownership of this device.
-                guard let clientDevice = previousActiveClient?.getClientDevice(for: captureHelperDevice) else {
-                    return
-                }
-                
-                previousActiveClient?.changeOwnership(forClientDeviceWith: clientDevice.handle, isOwned: false)
-            }
-        } else {
-            // The web page is attempting to open a CaptureHelperDevice that
-            // is no longer connected.
-            // Reply to web page
-            let errorResponseJsonRpc = Maraca.constructErrorResponse(error: SKTResult.E_DEVICENOTOPEN,
-                                                                     errorMessage: "There is no device with guid: \(deviceGUID) open at this time",
-                                                                     handle: client.handle,
-                                                                     responseId: responseId)
-            
-            client.replyToWebpage(with: errorResponseJsonRpc)
-        }
-        
-        
-    }
-    
-    private func close(jsonRPCObject: JsonRPCObject, webview: WKWebView) {
-        
-        guard let handle = jsonRPCObject.getParamsValue(for: MaracaConstants.Keys.handle.rawValue) as? Int else {
-            Maraca.sendErrorResponse(withError: SKTResult.E_INVALIDHANDLE,
-                                     webView: webview,
-                                     handle: nil,
-                                     responseId: nil)
-            return
-        }
-        
-        guard let responseId = jsonRPCObject.id as? Int else {
-            let errorResponseJsonRpc = Maraca.constructErrorResponse(error: SKTResult.E_INVALIDPARAMETER,
-                                                                     errorMessage: "The id was not specified",
-                                                                     handle: handle,
-                                                                     responseId: nil)
-            activeClient?.replyToWebpage(with: errorResponseJsonRpc)
-            return
-        }
-        
-        activeClient?.close(handle: handle, responseId: responseId)
-        
-        // If the handle is for a Client, call the delegate
-        // and remove from the list of clients.
-        // If the client with this handle is the `activeClient`,
-        // set it to nil
-        if let client = clientsList[handle] {
-            delegate?.maraca?(self, webviewDidCloseCaptureWith: client)
-            if activeClient == client {
-                activeClient = nil
-                activeClientIndexPath = nil
-            }
-            clientsList.removeValue(forKey: handle)
-        }
-    }
-    
-    private func getProperty(jsonRPCObject: JsonRPCObject, webview: WKWebView) {
-        
-        guard let handle = jsonRPCObject.getParamsValue(for: MaracaConstants.Keys.handle.rawValue) as? Int else {
-            Maraca.sendErrorResponse(withError: SKTResult.E_INVALIDHANDLE,
-                                     webView: webview,
-                                     handle: nil,
-                                     responseId: nil)
-            return
-        }
-        
-        guard let responseId = jsonRPCObject.id as? Int else {
-            let errorResponseJsonRpc = Maraca.constructErrorResponse(error: SKTResult.E_INVALIDPARAMETER,
-                                                                     errorMessage: "The id was not specified",
-                                                                     handle: handle,
-                                                                     responseId: nil)
-            activeClient?.replyToWebpage(with: errorResponseJsonRpc)
-            return
-        }
-        
-        guard let captureProperty = constructSKTCaptureProperty(from: jsonRPCObject) else {
-            // The values sent (property Id and property type) were invalid
-            Maraca.sendErrorResponse(withError: SKTResult.E_INVALIDPARAMETER,
-                                     webView: webview,
-                                     handle: nil,
-                                     responseId: responseId)
-            return
-        }
-        activeClient?.getProperty(with: handle, responseId: responseId, property: captureProperty)
-    }
-    
-    private func setProperty(jsonRPCObject: JsonRPCObject, webview: WKWebView) {
-        
-        guard let handle = jsonRPCObject.getParamsValue(for: MaracaConstants.Keys.handle.rawValue) as? Int else {
-            Maraca.sendErrorResponse(withError: SKTResult.E_INVALIDHANDLE,
-                                     webView: webview,
-                                     handle: nil,
-                                     responseId: nil)
-            return
-        }
-        
-        guard let responseId = jsonRPCObject.id as? Int else {
-            let errorResponseJsonRpc = Maraca.constructErrorResponse(error: SKTResult.E_INVALIDPARAMETER,
-                                                                     errorMessage: "The id was not specified",
-                                                                     handle: handle,
-                                                                     responseId: nil)
-            activeClient?.replyToWebpage(with: errorResponseJsonRpc)
-            return
-        }
-        
-        guard
-            let propertyFromJson = jsonRPCObject.getParamsValue(for: MaracaConstants.Keys.property.rawValue) as? [String : Any],
-            let captureProperty = constructSKTCaptureProperty(from: jsonRPCObject)
-        else {
-            // The values sent were invalid or nil
-            Maraca.sendErrorResponse(withError: SKTResult.E_INVALIDPARAMETER,
-                                     webView: webview,
-                                     handle: nil,
-                                     responseId: responseId)
-            return
-        }
-        
-        if let propertyValue = propertyFromJson[MaracaConstants.Keys.value.rawValue] {
-            do  {
-                try captureProperty.setPropertyValue(using: propertyValue)
-            } catch let error {
-                
-                DebugLogger.shared.addDebugMessage("\(String(describing: type(of: self))) - Error setting the value for SKTCaptureProperty: \(error)")
-                
-                // Send an error response Json back to the web page
-                // if an SKTCaptureProperty cannot be constructed
-                // from the dictionary sent from the webpage
-                let errorResponseJsonRpc = Maraca.constructErrorResponse(error: SKTResult.E_INVALIDPARAMETER,
-                                                                         errorMessage: error.localizedDescription,
-                                                                         handle: activeClient?.handle,
-                                                                         responseId: responseId)
-                
-                activeClient?.replyToWebpage(with: errorResponseJsonRpc)
-            }
-        }
-        
-        activeClient?.setProperty(with: handle, responseId: responseId, property: captureProperty)
-        
-    }
-}
-
-
-
-
-
-
-
-// MARK: - CaptureHelper delegation
-
-extension Maraca: CaptureHelperAllDelegate {
-    
-    public func didReceiveError(_ error: SKTResult) {
-        
-        guard let activeClient = activeClient else { return }
-        
-        // TODO
-        // There is no information associated with the error
-        let errorResponseJsonRpc = Maraca.constructErrorResponse(error: error,
-                                                                 errorMessage: "Some kind of error specific message",
-                                                                 handle: activeClient.handle,
-                                                                 responseId: nil)
-        
-        activeClient.notifyWebpage(with: errorResponseJsonRpc)
-        
-    }
-    
-    public func didNotifyArrivalForDeviceManager(_ device: CaptureHelperDeviceManager, withResult result: SKTResult) {
-        
-        sendJSONForDevicePresence(device, result: result, deviceTypeID: SKTCaptureEventID.deviceManagerArrival)
-    }
-    
-    public func didNotifyRemovalForDeviceManager(_ device: CaptureHelperDeviceManager, withResult result: SKTResult) {
-        
-        sendJSONForDevicePresence(device, result: result, deviceTypeID: SKTCaptureEventID.deviceManagerRemoval)
-    }
-    
-    public func didNotifyArrivalForDevice(_ device: CaptureHelperDevice, withResult result: SKTResult) {
-        
-        delegate?.maraca?(self, didNotifyArrivalFor: device, result: result)
-        
-        sendJSONForDevicePresence(device, result: result, deviceTypeID: SKTCaptureEventID.deviceArrival)
-    }
-    
-    public func didNotifyRemovalForDevice(_ device: CaptureHelperDevice, withResult result: SKTResult) {
-        
-        delegate?.maraca?(self, didNotifyRemovalFor: device, result: result)
-        
-        sendJSONForDevicePresence(device, result: result, deviceTypeID: SKTCaptureEventID.deviceRemoval)
-    }
-    
-    public func didChangePowerState(_ powerState: SKTCapturePowerState, forDevice device: CaptureHelperDevice) {
-        
-        guard
-            let activeClient = activeClient,
-            let clientHandle = activeClient.handle
-        else { return }
-        
-        let jsonRpc: [String: Any] = [
-            MaracaConstants.Keys.jsonrpc.rawValue : Maraca.jsonRpcVersion ?? Maraca.defaultJsonRpcVersion,
-            MaracaConstants.Keys.result.rawValue : [
-                MaracaConstants.Keys.handle.rawValue : clientHandle,
-                MaracaConstants.Keys.event.rawValue : [
-                    MaracaConstants.Keys.id.rawValue : SKTCaptureEventID.power.rawValue,
-                    MaracaConstants.Keys.type.rawValue : SKTCaptureEventDataType.byte.rawValue,
-                    MaracaConstants.Keys.value.rawValue : powerState.rawValue
-                ]
-            ]
-        ]
-        
-        activeClient.notifyWebpage(with: jsonRpc)
-    }
-    
-    public func didChangeBatteryLevel(_ batteryLevel: Int, forDevice device: CaptureHelperDevice) {
-        
-        delegate?.maraca?(self, batteryLevelDidChange: batteryLevel, for: device)
-        
-        guard
-            let activeClient = activeClient,
-            let clientHandle = activeClient.handle
-        else { return }
-        
-        let jsonRpc: [String: Any] = [
-            MaracaConstants.Keys.jsonrpc.rawValue : Maraca.jsonRpcVersion ?? Maraca.defaultJsonRpcVersion,
-            MaracaConstants.Keys.result.rawValue : [
-                MaracaConstants.Keys.handle.rawValue : clientHandle,
-                MaracaConstants.Keys.event.rawValue : [
-                    MaracaConstants.Keys.id.rawValue : SKTCaptureEventID.batteryLevel.rawValue,
-                    MaracaConstants.Keys.type.rawValue : SKTCaptureEventDataType.byte.rawValue,
-                    MaracaConstants.Keys.value.rawValue : batteryLevel
-                ]
-            ]
-        ]
-        
-        activeClient.notifyWebpage(with: jsonRpc)
-    
-    }
-    
-    public func didReceiveDecodedData(_ decodedData: SKTCaptureDecodedData?, fromDevice device: CaptureHelperDevice, withResult result: SKTResult) {
-        
-       sendJSONForDecodedData(decodedData, device: device, result: result)
-    }
-    
-    public func didChangeButtonsState(_ buttonsState: SKTCaptureButtonsState, forDevice device: CaptureHelperDevice) {
-        
-        guard
-            let activeClient = activeClient,
-            let clientHandle = activeClient.handle
-        else { return }
-        
-        let jsonRpc: [String: Any] = [
-            MaracaConstants.Keys.jsonrpc.rawValue : Maraca.jsonRpcVersion ?? Maraca.defaultJsonRpcVersion,
-            MaracaConstants.Keys.result.rawValue : [
-                MaracaConstants.Keys.handle.rawValue : clientHandle,
-                MaracaConstants.Keys.event.rawValue : [
-                    MaracaConstants.Keys.id.rawValue : SKTCaptureEventID.buttons.rawValue,
-                    MaracaConstants.Keys.type.rawValue : SKTCaptureEventDataType.byte.rawValue,
-                    MaracaConstants.Keys.value.rawValue : buttonsState.rawValue,
-                    
-                ]
-            ]
-        ]
-        
-        activeClient.notifyWebpage(with: jsonRpc)
-    }
-    
-    
-    
-    
-    
-    private func sendJSONForDevicePresence(_ device: CaptureHelperDevice, result: SKTResult, deviceTypeID: SKTCaptureEventID) {
-        guard let activeClient = activeClient else {
-            return
-        }
-                      
-        guard result == SKTResult.E_NOERROR else {
-          
-            let errorMessage = "There was an error with arrival or removal of the Socket Mobile device: \(String(describing: device.deviceInfo.name)). Error: \(result)"
-            let errorResponseJsonRpc = Maraca.constructErrorResponse(error: result,
-                                                                     errorMessage: errorMessage,
-                                                                     handle: activeClient.handle,
-                                                                     responseId: nil)
-          
-            activeClient.notifyWebpage(with: errorResponseJsonRpc)
-            return
-        }
-      
-        guard
-            let deviceName = device.deviceInfo.name?.escaped,
-            let deviceGuid = device.deviceInfo.guid,
-            let clientHandle = activeClient.handle else {
-                return
-        }
-      
-        // Send the deviceArrival to the web app along with its guid
-        // The web app may ignore this, but when it is ready to open
-        // the device, it will send the guid back to Maraca
-        // in order to open this device.
-        
-        let jsonRpc: [String: Any] = [
-            MaracaConstants.Keys.jsonrpc.rawValue : Maraca.jsonRpcVersion ?? Maraca.defaultJsonRpcVersion,
-            MaracaConstants.Keys.result.rawValue : [
-                MaracaConstants.Keys.handle.rawValue : clientHandle,
-                MaracaConstants.Keys.event.rawValue : [
-                    MaracaConstants.Keys.id.rawValue : deviceTypeID.rawValue,
-                    MaracaConstants.Keys.type.rawValue : SKTCaptureEventDataType.deviceInfo.rawValue,
-                    MaracaConstants.Keys.value.rawValue : [
-                        MaracaConstants.Keys.guid.rawValue : deviceGuid,
-                        MaracaConstants.Keys.name.rawValue : deviceName,
-                        MaracaConstants.Keys.type.rawValue : device.deviceInfo.deviceType.rawValue
-                    ]
-                ]
-            ]
-        ]
-      
-        activeClient.notifyWebpage(with: jsonRpc)
-    }
-    
-    private func sendJSONForDecodedData(_ decodedData: SKTCaptureDecodedData?, device: CaptureHelperDevice, result: SKTResult) {
-        
-        guard
-            let activeClient = activeClient,
-            let clientHandle = activeClient.handle
-            else { return }
-       
-        guard result == SKTResult.E_NOERROR else {
-           
-            let errorResponseJsonRpc = Maraca.constructErrorResponse(error: result,
-                                                                    errorMessage: "There was an error receiving decoded data from the Socket Mobile device: \(String(describing: device.deviceInfo.name)). Error: \(result)",
-                                                                    handle: activeClient.handle,
-                                                                    responseId: nil)
-           
-            activeClient.notifyWebpage(with: errorResponseJsonRpc)
-            return
-        }
-       
-        guard
-            let deviceGuid = device.deviceInfo.guid,
-            let dataFromDecodedDataStruct = decodedData?.decodedData,
-            let dataSourceName = decodedData?.dataSourceName,
-            let dataSourceId = decodedData?.dataSourceID.rawValue
-            else { return }
-       
-       
-       
-       
-        // Confirm that the ClientDevice has been previously opened
-        // by the active client
-       
-        guard activeClient.hasPreviouslyOpenedDevice(with: deviceGuid) else {
-            return
-        }
-       
-        let dataAsIntegerArray: [UInt8] = [UInt8](dataFromDecodedDataStruct)
-       
-        let jsonRpc: [String: Any] = [
-            MaracaConstants.Keys.jsonrpc.rawValue : Maraca.jsonRpcVersion ?? Maraca.defaultJsonRpcVersion,
-            MaracaConstants.Keys.result.rawValue : [
-                MaracaConstants.Keys.handle.rawValue : clientHandle,
-                MaracaConstants.Keys.event.rawValue : [
-                    MaracaConstants.Keys.id.rawValue : SKTCaptureEventID.decodedData.rawValue,
-                    MaracaConstants.Keys.type.rawValue : SKTCaptureEventDataType.decodedData.rawValue,
-                    MaracaConstants.Keys.value.rawValue : [
-                        MaracaConstants.Keys.data.rawValue : dataAsIntegerArray,
-                        MaracaConstants.Keys.id.rawValue : dataSourceId,
-                        MaracaConstants.Keys.name.rawValue : dataSourceName
-                    ]
-                ]
-            ]
-        ]
-       
-        activeClient.notifyWebpage(with: jsonRpc)
-    }
-}
-
-
-
-
-
-
-
-
-
-
 
 
 
@@ -927,113 +339,84 @@ extension Maraca: CaptureHelperAllDelegate {
 
 extension Maraca {
     
-    private static func convertToDictionary(text: String) -> [String: Any]? {
-        if let data = text.data(using: .utf8) {
-            do {
-                return try JSONSerialization.jsonObject(with: data, options: []) as? [String: Any]
-            } catch {
-                DebugLogger.shared.addDebugMessage("\(String(describing: type(of: self))) - Error converting JSON string to dictionary. Error: \(error)")
-            }
-        }
-        return nil
+    /// Re-assumes SKTCapture layer delegate
+    public func assumeCaptureDelegate() {
+        capture?.pushDelegate(activeClientManager.captureDelegate)
     }
     
-    public static func convertJsonRpcToString(_ jsonRpc: [String: Any]) -> String? {
-        do {
-            let jsonAsData = try JSONSerialization.data(withJSONObject: jsonRpc, options: [])
-            return String(data: jsonAsData, encoding: String.Encoding.utf8)
-        } catch let error {
-            DebugLogger.shared.addDebugMessage("\(String(describing: type(of: self))) - Error converting JsonRpc object to String: \(error)")
-            return nil
-        }
-    }
-    
-    private func constructSKTCaptureProperty(from jsonRPCObject: JsonRPCObject) -> SKTCaptureProperty? {
-        
-        guard
-            let property = jsonRPCObject.getParamsValue(for: MaracaConstants.Keys.property.rawValue) as? [String : Any],
-            let id = property[MaracaConstants.Keys.id.rawValue] as? Int,
-            let type = property[MaracaConstants.Keys.type.rawValue] as? Int,
-            let propertyID = SKTCapturePropertyID(rawValue: id),
-            let propertyType = SKTCapturePropertyType(rawValue: type)
-            else { return nil }
-        
-        let captureProperty = SKTCaptureProperty()
-        captureProperty.id = propertyID
-        captureProperty.type = propertyType
-        
-        return captureProperty
-    }
-    
-    
-    
-    
+    /// Resigns SKTCapture layer delegate to desired receiver
     public func resignCaptureDelegate(to: CaptureHelperAllDelegate) {
         capture?.pushDelegate(to)
     }
+}
+
+
+
+
+
+
+
+
+
+
+
+// MARK: - ActiveClientManagerDelegate
+
+extension Maraca: ActiveClientManagerDelegate {
     
-    
-    
-    
-    /// Construct a json dictionary with information based on the SKTResult
-    /// passed in. Then send the dictionary to the web page that the WKWebView
-    /// is displaying
-    public static func sendErrorResponse(withError error: SKTResult, webView: WKWebView, handle: Int?, responseId: Int?) {
-        
-        // TODO
-        // The client for this webview should be the same as
-        // the client for the handle?
-        // Is it necessary to get a client in for error case,
-        // when it would be the same?
-        guard
-            let webpageURLString = webView.url?.absoluteString,
-            let client = Maraca.shared.getClient(for: webpageURLString) else {
-                // Temporary
-                // But if this is nil, something is wrong
-                fatalError()
-        }
-        
-        var errorMessage: String = ""
-        
-        switch error {
-        case .E_INVALIDHANDLE:
-            
-            if let _ = handle {
-                errorMessage = "There is no client or device with the specified handle. The desired client or device may have been recently closed"
-            } else {
-                errorMessage = "A handle was not specified"
-            }
-            
-        case .E_INVALIDPARAMETER:
-            
-            errorMessage = "There is a missing or invalid property in the JSON-RPC that is required"
-        
-        case .E_INVALIDAPPINFO:
-            
-            errorMessage = "The AppInfo parameters are invalid"
-            
-        default: return
-        }
-        
-        let errorResponseJsonRpc = constructErrorResponse(error: error, errorMessage: errorMessage, handle: handle, responseId: responseId)
-        client.replyToWebpage(with: errorResponseJsonRpc)
-        
+    func activeClient(_ manager: ActiveClientManager, didNotifyArrivalFor device: CaptureHelperDevice, result: SKTResult) {
+        delegate?.maraca?(self, didNotifyArrivalFor: device, result: result)
     }
     
-    public static func constructErrorResponse(error: SKTResult, errorMessage: String, handle: Int?, responseId: Int?) -> [String: Any] {
-        
-        let responseJsonRpc: [String: Any] = [
-            MaracaConstants.Keys.jsonrpc.rawValue:  Maraca.jsonRpcVersion ?? Maraca.defaultJsonRpcVersion,
-            MaracaConstants.Keys.id.rawValue:       responseId ?? 6,
-            MaracaConstants.Keys.error.rawValue: [
-                MaracaConstants.Keys.code.rawValue: error.rawValue,
-                MaracaConstants.Keys.message.rawValue: errorMessage,
-                MaracaConstants.Keys.data.rawValue: [
-                    MaracaConstants.Keys.handle.rawValue: handle ?? -1
-                ]
-            ]
-        ]
-        
-        return responseJsonRpc
+    func activeClient(_ manager: ActiveClientManager, didNotifyRemovalFor device: CaptureHelperDevice, result: SKTResult) {
+        delegate?.maraca?(self, didNotifyRemovalFor: device, result: result)
     }
+    
+    func activeClient(_ manager: ActiveClientManager, batteryLevelDidChange value: Int, for device: CaptureHelperDevice) {
+        delegate?.maraca?(self, batteryLevelDidChange: value, for: device)
+    }
+}
+
+
+
+
+
+
+
+
+
+
+// MARK: - JavascriptMessageInterpreterDelegate
+
+extension Maraca: JavascriptMessageInterpreterDelegate {
+    
+    func interpreter(_ interpreter: JavascriptMessageInterpreter, didReceiveJSONRPC version: String) {
+        Maraca.jsonRpcVersion = version
+    }
+    
+    func interpreter(_ interpreter: JavascriptMessageInterpreter, didOpen client: Client, webview: WKWebView) {
+        guard let clientHandle = client.handle else {
+            Utility.sendErrorResponse(withError: SKTResult.E_INVALIDHANDLE,
+                                     webView: webview,
+                                     handle: nil,
+                                     responseId: nil)
+            return
+        }
+        
+        clientsList[clientHandle] = client
+        
+        Maraca.shared.activateClient(client)
+        
+        delegate?.maraca?(self, webviewDidOpenCaptureWith: client)
+    }
+    
+    func interpreter(_ interpreter: JavascriptMessageInterpreter, didClose client: Client, with handle: ClientHandle) {
+        delegate?.maraca?(self, webviewDidCloseCaptureWith: client)
+        if activeClient == client {
+            activeClient = nil
+            activeClientIndexPath = nil
+        }
+        clientsList.removeValue(forKey: handle)
+    }
+    
 }

@@ -9,35 +9,37 @@ import Foundation
 import SKTCapture
 import WebKit.WKWebView
 
-public class Client: NSObject, ClientReceiverProtocol {
+public class Client: NSObject, ClientConformanceProtocol {
     
     // MARK: - Variables
     
-    public private(set) var handle: ClientHandle!
+    internal private(set) var handle: ClientHandle!
     
-    // Used to denote which client currently has active
-    // ownership of BLE devices
-    public let ownershipId: String = UUID().uuidString
+    internal let ownershipId: String = UUID().uuidString
     
-    public static var disownedBlankId: String {
+    internal static var disownedBlankId: String {
         // If this client does not have ownership, a
         // "blank" UUID string will be sent to the web
         // app using CaptureJS
         return "00000000-0000-0000-0000-000000000000"
     }
     
-    private var appInfo: SKTAppInfo?
+    internal private(set) var appInfo: SKTAppInfo?
     
-    // This is used to identify/retrieve a client with a webview
-    public private(set) var webpageURLString: String?
+    internal private(set) var webpageURLString: String?
     
-    // This is used to send data back to the current web page
-    public private(set) weak var webview: WKWebView?
+    internal private(set) weak var webview: WKWebView?
     
-    public private(set) var didOpenCapture: Bool = false
+    internal private(set) var didOpenCapture: Bool = false
     
-    // Keep track of the capture helper devices that this client has opened.
-    public private(set) var openedDevices: [ClientDeviceHandle : ClientDevice] = [:]
+    internal private(set) var openedDevices: [ClientDeviceHandle : ClientDevice] = [:]
+    
+    
+    
+    
+    required public override init() {
+        super.init()
+    }
 }
 
 
@@ -52,7 +54,7 @@ public class Client: NSObject, ClientReceiverProtocol {
 
 extension Client {
     
-    @discardableResult public func openWithAppInfo(appInfo: SKTAppInfo, webview: WKWebView) throws -> ClientHandle {
+    @discardableResult internal func openWithAppInfo(appInfo: SKTAppInfo, webview: WKWebView) throws -> ClientHandle {
         // => add new Client Instance to clients list in Maraca
         // => AppInfo Verify ==> TRUE
         // => send device Arrivals if devices connected
@@ -77,11 +79,11 @@ extension Client {
         return handle
     }
     
-    public func open(captureHelperDevice: CaptureHelperDevice, jsonRPCObject: JsonRPCObject) {
+    internal func open(captureHelperDevice: CaptureHelperDevice, jsonRPCObject: JsonRPCObject) {
         let clientDevice = ClientDevice(captureHelperDevice: captureHelperDevice)
         openedDevices[clientDevice.handle] = clientDevice
         
-        let responseJsonRpc: [String: Any] = [
+        let responseJsonRpc: JSONDictionary = [
             MaracaConstants.Keys.jsonrpc.rawValue:       jsonRPCObject.jsonrpc ?? Maraca.defaultJsonRpcVersion,
             MaracaConstants.Keys.id.rawValue:            jsonRPCObject.id ?? 2,
             MaracaConstants.Keys.result.rawValue: [
@@ -94,7 +96,7 @@ extension Client {
         changeOwnership(forClientDeviceWith: clientDevice.handle, isOwned: true)
     }
     
-    public func close(handle: Int, responseId: Int) {
+    internal func close(handle: ClientHandle, responseId: Int) {
         if handle == self.handle {
             closeAllDevices()
         } else {
@@ -110,17 +112,17 @@ extension Client {
         replyToWebpage(with: responseJsonRpc)
     }
     
-    public func closeAllDevices() {
+    internal func closeAllDevices() {
         openedDevices.removeAll()
     }
     
-    public func closeDevice(with handle: ClientDeviceHandle, responseId: Int) {
+    private func closeDevice(with handle: ClientDeviceHandle, responseId: Int) {
         guard let _ = openedDevices[handle] else {
             guard let webview = webview else {
                 // The webview should not be nil
                 fatalError("The Client must have been created without calling `openWithAppInfo`")
             }
-            Maraca.sendErrorResponse(withError: SKTResult.E_INVALIDHANDLE,
+            Utility.sendErrorResponse(withError: SKTResult.E_INVALIDHANDLE,
                                      webView: webview,
                                      handle: handle,
                                      responseId: responseId)
@@ -130,9 +132,9 @@ extension Client {
         openedDevices.removeValue(forKey: handle)
     }
     
-    public func changeOwnership(forClientDeviceWith handle: ClientDeviceHandle, isOwned: Bool) {
+    internal func changeOwnership(forClientDeviceWith handle: ClientDeviceHandle, isOwned: Bool) {
         
-        let responseJson: [String: Any] = [
+        let responseJson: JSONDictionary = [
             MaracaConstants.Keys.jsonrpc.rawValue: Maraca.jsonRpcVersion ?? Maraca.defaultJsonRpcVersion,
             MaracaConstants.Keys.result.rawValue: [
                 MaracaConstants.Keys.handle.rawValue: handle,
@@ -145,170 +147,16 @@ extension Client {
         ]
         notifyWebpage(with: responseJson)
     }
-}
-
-
-
-
-
-
-
-
-
-
-// MARK: - Get / Set property
-
-extension Client {
     
-    public func getProperty(with handle: Int, responseId: Int, property: SKTCaptureProperty) {
+    internal func hasPreviouslyOpenedDevice(with deviceGuid: String) -> Bool {
+            return Array(openedDevices.values).filter { return $0.guid == deviceGuid }.count > 0
+        }
         
-        if handle == self.handle {
-            getProperty(property: property, responseId: responseId) { (result) in
-                self.replyToWebpage(with: resultDictionary(result))
-            }
-        } else if let _ = openedDevices[handle] {
-            openedDevices[handle]?.getProperty(property: property, responseId: responseId, completion: { (result) in
-                self.replyToWebpage(with: resultDictionary(result))
-            })
-        } else {
-            
-            let errorMessage = "There is no client or device with the specified handle. The device may have been recently closed"
-            let errorResponseJsonRpc = Maraca.constructErrorResponse(error: SKTResult.E_INVALIDHANDLE,
-                                                                     errorMessage: errorMessage,
-                                                                     handle: handle,
-                                                                     responseId: responseId)
-            DebugLogger.shared.addDebugMessage("\(String(describing: type(of: self))) - error response json rpc: \(errorResponseJsonRpc)")
-            self.replyToWebpage(with: errorResponseJsonRpc)
-        }
-    }
-    
-    public func setProperty(with handle: Int, responseId: Int, property: SKTCaptureProperty) {
-        
-        if handle == self.handle {
-            // TODO
-            // Will this affect other Clients?
-            // Each Client instance uses a single CaptureHelper
-            // shared instance
-            // So setting a property to a particular value might
-            // affect other Clients that don't want this.
-            setProperty(property: property, responseId: responseId) { (result) in
-                self.replyToWebpage(with: resultDictionary(result))
-            }
-        } else if let _ = openedDevices[handle] {
-            openedDevices[handle]?.setProperty(property: property, responseId: responseId, completion: { (result) in
-                self.replyToWebpage(with: resultDictionary(result))
-            })
-        } else {
-            let errorResponseJsonRpc = Maraca.constructErrorResponse(error: SKTResult.E_INVALIDHANDLE,
-                                                                     errorMessage: "There is no client or device with the specified handle. The device may have been recently closed",
-                                                                     handle: handle,
-                                                                     responseId: responseId)
-            self.replyToWebpage(with: errorResponseJsonRpc)
-        }
-    }
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    public func getProperty(property: SKTCaptureProperty, responseId: Int, completion: @escaping ClientReceiverCompletionHandler) {
-        Maraca.shared.capture?.getProperty(property) { (result, property) in
-            
-            guard result == .E_NOERROR else {
-                
-                let errorResponseJsonRpc = Maraca.constructErrorResponse(error: result,
-                                                                         errorMessage: "There was an error with getting property from Capture. Error: \(result)",
-                                                                         handle: self.handle,
-                                                                         responseId: responseId)
-                
-                completion(.failure(ErrorResponse(json: errorResponseJsonRpc)))
-                return
-            }
-            
-            // Used a different name to differentiate between the three
-            guard let unwrappedProperty = property else {
-                // TODO
-                // Return with some kind of error response instead.
-                // But if the result != E_NOERROR, this will not be reached anyway.
-                fatalError("This is an issue with CaptureHelper if the SKTCaptureProperty is nil")
-            }
-            
-            do {
-                let jsonFromGetProperty = try unwrappedProperty.jsonFromGetProperty(with: responseId)
-                completion(.success(jsonFromGetProperty))
-            } catch let error {
-                DebugLogger.shared.addDebugMessage("\(String(describing: type(of: self))) - Error converting SKTCaptureProperty to a dictionary: \(error)")
-                
-                // Send an error response Json back to the web page
-                // if a dictionary cannot be constructed from
-                // the resulting SKTCaptureProperty
-                let errorResponseJsonRpc = Maraca.constructErrorResponse(error: SKTResult.E_INVALIDPARAMETER,
-                                                                         errorMessage: error.localizedDescription,
-                                                                         handle: self.handle,
-                                                                         responseId: responseId)
-                
-                completion(.failure(ErrorResponse(json: errorResponseJsonRpc)))
-            }
-        }
-    }
-    
-    public func setProperty(property: SKTCaptureProperty, responseId: Int, completion: @escaping ClientReceiverCompletionHandler) {
-        
-        Maraca.shared.capture?.setProperty(property) { (result, property) in
-            
-            guard result == .E_NOERROR else {
-                
-                let errorResponseJsonRpc = Maraca.constructErrorResponse(error: result,
-                                                                         errorMessage: "There was an error with setting property. Error: \(result)",
-                                                                         handle: self.handle,
-                                                                         responseId: responseId)
-                
-                completion(.failure(ErrorResponse(json: errorResponseJsonRpc)))
-                return
-            }
-            
-            let jsonRpc: [String : Any] = [
-                MaracaConstants.Keys.jsonrpc.rawValue : Maraca.jsonRpcVersion ?? Maraca.defaultJsonRpcVersion,
-                MaracaConstants.Keys.id.rawValue : responseId,
-                MaracaConstants.Keys.result.rawValue: [
-                    MaracaConstants.Keys.handle.rawValue : self.handle
-                    // We might send the property back as well.
-                ]
-            ]
-            
-            completion(.success(jsonRpc))
-        }
-    }
-    
-}
-
-
-
-
-
-
-
-
-// MARK: - Utility functions
-
-extension Client {
-    
-    public func hasPreviouslyOpenedDevice(with deviceGuid: String) -> Bool {
-        return Array(openedDevices.values).filter { return $0.guid == deviceGuid }.count > 0
-    }
-    
-    public func getClientDevice(for device: CaptureHelperDevice) -> ClientDevice? {
+    internal func getClientDevice(for device: CaptureHelperDevice) -> ClientDevice? {
         return Array(openedDevices.values).filter { return $0.guid == device.deviceInfo.guid }.first
     }
     
-    public func resume() {
+    internal func resume() {
         guard didOpenCapture == true else {
             fatalError()
         }
@@ -327,7 +175,7 @@ extension Client {
         // Send device arrivals, etc.
     }
     
-    public func suspend() {
+    internal func suspend() {
         guard didOpenCapture == true else {
             fatalError()
         }
@@ -344,18 +192,18 @@ extension Client {
     
     // For responding back to a web page that has
     // opened a capture with a client, etc.
-    public func replyToWebpage(with jsonRpc: [String: Any]) {
+    internal func replyToWebpage(with jsonRpc: JSONDictionary) {
         sendJsonRpcToWebpage(jsonRpc: jsonRpc, javascriptFunctionName: "window.maraca.replyJsonRpc('")
     }
     
     // For sending information to the web page
-    public func notifyWebpage(with jsonRpc: [String: Any]) {
+    internal func notifyWebpage(with jsonRpc: JSONDictionary) {
         sendJsonRpcToWebpage(jsonRpc: jsonRpc, javascriptFunctionName: "window.maraca.receiveJsonRpc('")
     }
     
-    private func sendJsonRpcToWebpage(jsonRpc: [String: Any], javascriptFunctionName: String) {
+    private func sendJsonRpcToWebpage(jsonRpc: JSONDictionary, javascriptFunctionName: String) {
         
-        guard let jsonAsString = Maraca.convertJsonRpcToString(jsonRpc) else { return }
+        guard let jsonAsString = Utility.convertJsonRpcToString(jsonRpc) else { return }
         
         // Refer to replyJSonRpc and receiveJsonRPC functions
         // REceive used for when received decoded data
@@ -381,5 +229,142 @@ extension Client {
                 DebugLogger.shared.addDebugMessage("\(String(describing: type(of: self))) - Success evaluating javascript expression: \(javascript)\n")
             }
         })
+    }
+}
+
+
+
+
+
+
+
+
+
+
+// MARK: - Get / Set property
+
+extension Client: ClientReceiverProtocol {
+    
+    internal func getProperty(property: SKTCaptureProperty, responseId: Int, completion: @escaping ClientReceiverCompletionHandler) {
+        Maraca.shared.capture?.getProperty(property) { (result, property) in
+            
+            guard result == .E_NOERROR else {
+                
+                let errorResponseJsonRpc = Utility.constructErrorResponse(error: result,
+                                                                         errorMessage: "There was an error with getting property from Capture. Error: \(result)",
+                                                                         handle: self.handle,
+                                                                         responseId: responseId)
+                
+                completion(.failure(ErrorResponse(json: errorResponseJsonRpc)))
+                return
+            }
+            
+            // Used a different name to differentiate between the three
+            guard let unwrappedProperty = property else {
+                // TODO
+                // Return with some kind of error response instead.
+                // But if the result != E_NOERROR, this will not be reached anyway.
+                fatalError("This is an issue with CaptureHelper if the SKTCaptureProperty is nil")
+            }
+            
+            do {
+                let jsonFromGetProperty = try unwrappedProperty.jsonFromGetProperty(with: responseId)
+                completion(.success(jsonFromGetProperty))
+            } catch let error {
+                DebugLogger.shared.addDebugMessage("\(String(describing: type(of: self))) - Error converting SKTCaptureProperty to a dictionary: \(error)")
+                
+                // Send an error response Json back to the web page
+                // if a dictionary cannot be constructed from
+                // the resulting SKTCaptureProperty
+                let errorResponseJsonRpc = Utility.constructErrorResponse(error: SKTResult.E_INVALIDPARAMETER,
+                                                                         errorMessage: error.localizedDescription,
+                                                                         handle: self.handle,
+                                                                         responseId: responseId)
+                
+                completion(.failure(ErrorResponse(json: errorResponseJsonRpc)))
+            }
+        }
+    }
+    
+    internal func setProperty(property: SKTCaptureProperty, responseId: Int, completion: @escaping ClientReceiverCompletionHandler) {
+        
+        Maraca.shared.capture?.setProperty(property) { (result, property) in
+            
+            guard result == .E_NOERROR else {
+                
+                let errorResponseJsonRpc = Utility.constructErrorResponse(error: result,
+                                                                         errorMessage: "There was an error with setting property. Error: \(result)",
+                                                                         handle: self.handle,
+                                                                         responseId: responseId)
+                
+                completion(.failure(ErrorResponse(json: errorResponseJsonRpc)))
+                return
+            }
+            
+            let jsonRpc: [String : Any] = [
+                MaracaConstants.Keys.jsonrpc.rawValue : Maraca.jsonRpcVersion ?? Maraca.defaultJsonRpcVersion,
+                MaracaConstants.Keys.id.rawValue : responseId,
+                MaracaConstants.Keys.result.rawValue: [
+                    MaracaConstants.Keys.handle.rawValue : self.handle
+                    // We might send the property back as well.
+                ]
+            ]
+            
+            completion(.success(jsonRpc))
+        }
+    }
+    
+    
+    
+    
+    
+    
+    
+    
+    internal func getProperty(with handle: ClientHandle, responseId: Int, property: SKTCaptureProperty) {
+        
+        if handle == self.handle {
+            getProperty(property: property, responseId: responseId) { (result) in
+                self.replyToWebpage(with: resultDictionary(result))
+            }
+        } else if let _ = openedDevices[handle] {
+            openedDevices[handle]?.getProperty(property: property, responseId: responseId, completion: { (result) in
+                self.replyToWebpage(with: resultDictionary(result))
+            })
+        } else {
+            
+            let errorMessage = "There is no client or device with the specified handle. The device may have been recently closed"
+            let errorResponseJsonRpc = Utility.constructErrorResponse(error: SKTResult.E_INVALIDHANDLE,
+                                                                     errorMessage: errorMessage,
+                                                                     handle: handle,
+                                                                     responseId: responseId)
+            DebugLogger.shared.addDebugMessage("\(String(describing: type(of: self))) - error response json rpc: \(errorResponseJsonRpc)")
+            self.replyToWebpage(with: errorResponseJsonRpc)
+        }
+    }
+    
+    internal func setProperty(with handle: ClientHandle, responseId: Int, property: SKTCaptureProperty) {
+        
+        if handle == self.handle {
+            // TODO
+            // Will this affect other Clients?
+            // Each Client instance uses a single CaptureHelper
+            // shared instance
+            // So setting a property to a particular value might
+            // affect other Clients that don't want this.
+            setProperty(property: property, responseId: responseId) { (result) in
+                self.replyToWebpage(with: resultDictionary(result))
+            }
+        } else if let _ = openedDevices[handle] {
+            openedDevices[handle]?.setProperty(property: property, responseId: responseId, completion: { (result) in
+                self.replyToWebpage(with: resultDictionary(result))
+            })
+        } else {
+            let errorResponseJsonRpc = Utility.constructErrorResponse(error: SKTResult.E_INVALIDHANDLE,
+                                                                     errorMessage: "There is no client or device with the specified handle. The device may have been recently closed",
+                                                                     handle: handle,
+                                                                     responseId: responseId)
+            self.replyToWebpage(with: errorResponseJsonRpc)
+        }
     }
 }
