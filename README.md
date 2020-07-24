@@ -28,7 +28,7 @@ override func viewDidLoad() {
 private func setupMaraca() {
     
     let appKey =        <Your App Key>
-    let appId =         <App ID>
+    let appId =         <Your App ID>
     let developerId =   <Your Developer ID>
     let bundle = Bundle.main
     
@@ -48,9 +48,13 @@ private func setupMaraca() {
         })
 }
 
+// Initialize WKWebView with Maraca.shared.webViewConfiguration after
+// setting up Maraca
+private var webview: WKWebView!
+
 private func setupUI() {
 
-    let webview = {
+    webview = {
         let w = WKWebView(frame: .zero, configuration: Maraca.shared.webViewConfiguration)
         w.navigationDelegate = self
         return w
