@@ -5,14 +5,29 @@
 [![License](https://img.shields.io/cocoapods/l/Maraca.svg?style=flat)](https://cocoapods.org/pods/Maraca)
 [![Platform](https://img.shields.io/cocoapods/p/Maraca.svg?style=flat)](https://cocoapods.org/pods/Maraca)
 
-Maraca establishes connections between your iOS application and a web application using our [CaptureJS SDK](#Link-capture-js-sdk-pending), allowing for such web applications to connect with and use our Socket Mobile scanners and NFC readers.
+Maraca establishes connections between your iOS application using our [iOS Capture SDK](https://github.com/SocketMobile/cocoapods-capture) and a web application using our [CaptureJS SDK](https://docs.socketmobile.com/capturejs/en/latest/gettingStarted.html). This enables the web application to connect with our scanners and NFC readers with the same flexibilty that our iOS SDK provides.
 
 ## Usage
 
+Under the hood, Maraca is an umbrella for our iOS Capture SDK. So naturally, you need to provide credentials to get started. 
+
+The most important step is to call `observeJavascriptMessageHandlers(_:)`
+You may provide your own Javascript Message Handler names if you're familiar with [WKUserContentController](https://developer.apple.com/documentation/webkit/wkusercontentcontroller). Otherwise, this can be nil.
+This function enables messages containing data to be transferred from your web application using CaptureJS to your iOS application.
+
+Inside the completion handler of `beging(withAppKey:appId:developerId:completion:)`, create your `WKWebView` using the public `Maraca.shared.webViewConfiguration` configuration
+
 ```swift
+
+override func viewDidLoad() {
+    super.viewDidLoad()
+
+    setupMaraca()
+}
 
 private func setupMaraca() {
     
+    // If you are unfamiliar with the Socket Mobile Capture SDK
     let appKey =        <Your App Key>
     let appId =         <App ID>
     let developerId =   <Your Developer ID>
@@ -26,7 +41,11 @@ private func setupMaraca() {
                developerId: developerId,
                completion: { [weak self] (result) in
 
-                   self?.setupUI()
+                    if result == .E_NOERROR {
+                        self?.setupUI()
+                    } else {
+                        // Encountered some error, inspect result
+                    }
         })
 }
 
@@ -43,9 +62,11 @@ private func setupUI() {
     // Set up constraints, etc..
     
     let myWebApplicationURLString = .....
+    
     guard let url = URL(string: myWebApplicationURLString) else {
         return
     }
+    
     loadMyWebApplication(with: url)
     
 }
