@@ -203,14 +203,34 @@ extension Client {
     
     private func sendJsonRpcToWebpage(jsonRpc: JSONDictionary, javascriptFunctionName: String) {
         
-        guard let jsonAsString = Utility.convertJsonRpcToString(jsonRpc) else { return }
-        
-        // Refer to replyJSonRpc and receiveJsonRPC functions
-        // REceive used for when received decoded data
-        // reply for when replying back to web page that you opened the client, set a property etc.
-        
         var javascript = javascriptFunctionName
-        javascript.write(jsonAsString)
+        
+        let jsonStringResult = Utility.convertJsonRpcToString(jsonRpc)
+        switch jsonStringResult {
+        case .success(let jsonString):
+            
+            // Refer to replyJSonRpc and receiveJsonRPC functions
+            // REceive used for when received decoded data
+            // reply for when replying back to web page that you opened the client, set a property etc.
+            
+            
+            javascript.write(jsonString)
+            
+            
+        case .failure(let error):
+            let errorJSONStringResult = Utility.convertErrorToJSONString(error: error)
+            switch errorJSONStringResult {
+            case .success(let errorJSONString):
+                // Refer to replyJSonRpc and receiveJsonRPC functions
+                // REceive used for when received decoded data
+                // reply for when replying back to web page that you opened the client, set a property etc.
+                javascript.write(errorJSONString)
+            case .failure(let error):
+                let errorMessage = "Error converting JSON to String: \(error.localizedDescription)"
+                javascript.write(errorMessage)
+            }
+        }
+        
         javascript.write("'); ")
         
         guard webview?.url?.absoluteString == webpageURLString else {
