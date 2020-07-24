@@ -122,10 +122,8 @@ class ActiveClientManager: NSObject {
 extension ActiveClientManager {
     
     internal func sendJSONForError(activeClient: Client, error: SKTResult) {
-        // TODO
-        // There is no information associated with the error
         let errorResponseJsonRpc = Utility.constructErrorResponse(error: error,
-                                                                 errorMessage: "Some kind of error specific message",
+                                                                 errorMessage: "",
                                                                  handle: activeClient.handle,
                                                                  responseId: nil)
         
