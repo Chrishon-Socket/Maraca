@@ -53,7 +53,7 @@ internal struct ClientDevice: ClientReceiverProtocol {
             guard result == .E_NOERROR else {
                 
                 let errorMessage = "There was an error with getting property from the CaptureHelperDevice. Error: \(result)"
-                let errorResponseJsonRpc = Maraca.constructErrorResponse(error: result,
+                let errorResponseJsonRpc = Utility.constructErrorResponse(error: result,
                                                                          errorMessage: errorMessage,
                                                                          handle: self.handle,
                                                                          responseId: responseId)
@@ -78,7 +78,7 @@ internal struct ClientDevice: ClientReceiverProtocol {
                 // Send an error response Json back to the web page
                 // if a dictionary cannot be constructed from
                 // the resulting SKTCaptureProperty
-                let errorResponseJsonRpc = Maraca.constructErrorResponse(error: SKTResult.E_INVALIDPARAMETER,
+                let errorResponseJsonRpc = Utility.constructErrorResponse(error: SKTResult.E_INVALIDPARAMETER,
                                                                          errorMessage: error.localizedDescription,
                                                                          handle: self.handle,
                                                                          responseId: responseId)
@@ -95,7 +95,7 @@ internal struct ClientDevice: ClientReceiverProtocol {
             guard result == .E_NOERROR else {
                 
                 let errorMessage = "There was an error with setting property of the CaptureHelperDevice. Error: \(result)"
-                let errorResponseJsonRpc = Maraca.constructErrorResponse(error: result,
+                let errorResponseJsonRpc = Utility.constructErrorResponse(error: result,
                                                                          errorMessage: errorMessage,
                                                                          handle: self.handle,
                                                                          responseId: responseId)
