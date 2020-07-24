@@ -27,7 +27,6 @@ override func viewDidLoad() {
 
 private func setupMaraca() {
     
-    // If you are unfamiliar with the Socket Mobile Capture SDK
     let appKey =        <Your App Key>
     let appId =         <App ID>
     let developerId =   <Your Developer ID>
