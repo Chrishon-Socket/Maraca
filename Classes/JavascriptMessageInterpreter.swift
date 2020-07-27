@@ -223,43 +223,25 @@ class JavascriptMessageInterpreter: NSObject {
     
     private func openDevice(jsonRPCObject: JsonRPCObject, webview: WKWebView) {
         
-        guard let responseId = jsonRPCObject.id as? Int else {
-            // The user may have still sent the client handle
-            let clientHandle = jsonRPCObject.getParamsValue(for: MaracaConstants.Keys.handle.rawValue) as? Int
-            
-            let errorResponseJsonRpc = Utility.constructErrorResponse(error: SKTResult.E_INVALIDPARAMETER,
-                                                                     errorMessage: "The id was not specified",
-                                                                     handle: clientHandle,
-                                                                     responseId: nil)
-            Maraca.shared.activeClient?.replyToWebpage(with: errorResponseJsonRpc)
-            return
-        }
-        
-        guard let clientHandle = jsonRPCObject.getParamsValue(for: MaracaConstants.Keys.handle.rawValue) as? Int else {
-            // The user may have still sent the responseId
-            let responseId = jsonRPCObject.id as? Int
-            Utility.sendErrorResponse(withError: SKTResult.E_INVALIDHANDLE,
-                                     webView: webview,
-                                     handle: nil,
-                                     responseId: responseId)
+        guard let verifiedJSONRPCObject = verified(jsonRPCObject: jsonRPCObject, webview: webview) else {
             return
         }
         
         guard let deviceGUID = jsonRPCObject.getParamsValue(for: MaracaConstants.Keys.guid.rawValue) as? String else {
             Utility.sendErrorResponse(withError: SKTResult.E_INVALIDPARAMETER,
                                      webView: webview,
-                                     handle: clientHandle,
-                                     responseId: responseId)
+                                     handle: verifiedJSONRPCObject.handle,
+                                     responseId: verifiedJSONRPCObject.responseId)
             return
         }
         
         
         
-        guard let client = Maraca.shared.clientsList[clientHandle] else {
+        guard let client = Maraca.shared.clientsList[verifiedJSONRPCObject.handle] else {
             Utility.sendErrorResponse(withError: SKTResult.E_INVALIDHANDLE,
                                      webView: webview,
-                                     handle: clientHandle,
-                                     responseId: responseId)
+                                     handle: verifiedJSONRPCObject.handle,
+                                     responseId: verifiedJSONRPCObject.responseId)
             return
         }
         
@@ -292,7 +274,7 @@ class JavascriptMessageInterpreter: NSObject {
             let errorResponseJsonRpc = Utility.constructErrorResponse(error: SKTResult.E_DEVICENOTOPEN,
                                                                      errorMessage: "There is no device with guid: \(deviceGUID) open at this time",
                                                                      handle: client.handle,
-                                                                     responseId: responseId)
+                                                                     responseId: verifiedJSONRPCObject.responseId)
             
             client.replyToWebpage(with: errorResponseJsonRpc)
         }
@@ -302,58 +284,32 @@ class JavascriptMessageInterpreter: NSObject {
     
     private func close(jsonRPCObject: JsonRPCObject, webview: WKWebView) {
         
-        guard let handle = jsonRPCObject.getParamsValue(for: MaracaConstants.Keys.handle.rawValue) as? Int else {
-            Utility.sendErrorResponse(withError: SKTResult.E_INVALIDHANDLE,
-                                     webView: webview,
-                                     handle: nil,
-                                     responseId: nil)
+        guard let verifiedJSONRPCObject = verified(jsonRPCObject: jsonRPCObject, webview: webview) else {
             return
         }
         
-        guard let responseId = jsonRPCObject.id as? Int else {
-            let errorResponseJsonRpc = Utility.constructErrorResponse(error: SKTResult.E_INVALIDPARAMETER,
-                                                                     errorMessage: "The id was not specified",
-                                                                     handle: handle,
-                                                                     responseId: nil)
-            Maraca.shared.activeClient?.replyToWebpage(with: errorResponseJsonRpc)
-            return
-        }
-        
-        Maraca.shared.activeClient?.close(handle: handle, responseId: responseId)
+        Maraca.shared.activeClient?.close(handle: verifiedJSONRPCObject.handle, responseId: verifiedJSONRPCObject.responseId)
         
         // If the handle is for a Client, call the delegate
         // and remove from the list of clients.
         // If the client with this handle is the `activeClient`,
         // set it to nil
-        if let client = Maraca.shared.clientsList[handle] {
-            delegate?.interpreter(self, didClose: client, with: handle)
+        if let client = Maraca.shared.clientsList[verifiedJSONRPCObject.handle] {
+            delegate?.interpreter(self, didClose: client, with: verifiedJSONRPCObject.handle)
         }
     }
     
     private func getProperty(jsonRPCObject: JsonRPCObject, webview: WKWebView) {
         
-        guard let handle = jsonRPCObject.getParamsValue(for: MaracaConstants.Keys.handle.rawValue) as? Int else {
-            Utility.sendErrorResponse(withError: SKTResult.E_INVALIDHANDLE,
-                                     webView: webview,
-                                     handle: nil,
-                                     responseId: nil)
-            return
-        }
-        
-        guard let responseId = jsonRPCObject.id as? Int else {
-            let errorResponseJsonRpc = Utility.constructErrorResponse(error: SKTResult.E_INVALIDPARAMETER,
-                                                                     errorMessage: "The id was not specified",
-                                                                     handle: handle,
-                                                                     responseId: nil)
-            Maraca.shared.activeClient?.replyToWebpage(with: errorResponseJsonRpc)
+        guard let verifiedJSONRPCObject = verified(jsonRPCObject: jsonRPCObject, webview: webview) else {
             return
         }
         
         let capturePropertyResult = Utility.constructSKTCaptureProperty(from: jsonRPCObject)
         switch capturePropertyResult {
         case .success(let captureProperty):
-            Maraca.shared.activeClient?.getProperty(with: handle,
-                                                    responseId: responseId,
+            Maraca.shared.activeClient?.getProperty(with: verifiedJSONRPCObject.handle,
+                                                    responseId: verifiedJSONRPCObject.responseId,
                                                     property: captureProperty)
             
         case .failure(_):
@@ -361,7 +317,7 @@ class JavascriptMessageInterpreter: NSObject {
             Utility.sendErrorResponse(withError: SKTResult.E_INVALIDPARAMETER,
                                      webView: webview,
                                      handle: nil,
-                                     responseId: responseId)
+                                     responseId: verifiedJSONRPCObject.responseId)
             return
         }
         
@@ -369,31 +325,18 @@ class JavascriptMessageInterpreter: NSObject {
     
     private func setProperty(jsonRPCObject: JsonRPCObject, webview: WKWebView) {
         
-        guard let handle = jsonRPCObject.getParamsValue(for: MaracaConstants.Keys.handle.rawValue) as? Int else {
-            Utility.sendErrorResponse(withError: SKTResult.E_INVALIDHANDLE,
-                                     webView: webview,
-                                     handle: nil,
-                                     responseId: nil)
-            return
-        }
-        
-        guard let responseId = jsonRPCObject.id as? Int else {
-            let errorResponseJsonRpc = Utility.constructErrorResponse(error: SKTResult.E_INVALIDPARAMETER,
-                                                                     errorMessage: "The id was not specified",
-                                                                     handle: handle,
-                                                                     responseId: nil)
-            Maraca.shared.activeClient?.replyToWebpage(with: errorResponseJsonRpc)
+        guard let verifiedJSONRPCObject = verified(jsonRPCObject: jsonRPCObject, webview: webview) else {
             return
         }
         
         guard
-            let propertyFromJson = jsonRPCObject.getParamsValue(for: MaracaConstants.Keys.property.rawValue) as? [String : Any]
+            let propertyFromJson = verifiedJSONRPCObject.getParamsValue(for: MaracaConstants.Keys.property.rawValue) as? [String : Any]
         else {
             // The values sent were invalid or nil
             Utility.sendErrorResponse(withError: SKTResult.E_INVALIDPARAMETER,
                                      webView: webview,
                                      handle: nil,
-                                     responseId: responseId)
+                                     responseId: verifiedJSONRPCObject.responseId)
             return
         }
         
@@ -414,13 +357,15 @@ class JavascriptMessageInterpreter: NSObject {
                     let errorResponseJsonRpc = Utility.constructErrorResponse(error: SKTResult.E_INVALIDPARAMETER,
                                                                              errorMessage: error.localizedDescription,
                                                                              handle: Maraca.shared.activeClient?.handle,
-                                                                             responseId: responseId)
+                                                                             responseId: verifiedJSONRPCObject.responseId)
                     
                     Maraca.shared.activeClient?.replyToWebpage(with: errorResponseJsonRpc)
                 }
             }
             
-            Maraca.shared.activeClient?.setProperty(with: handle, responseId: responseId, property: captureProperty)
+            Maraca.shared.activeClient?.setProperty(with: verifiedJSONRPCObject.handle,
+                                                    responseId: verifiedJSONRPCObject.responseId,
+                                                    property: captureProperty)
             
         case .failure(let error):
             let errorJSONDictionary = Utility.constructErrorResponse(error: error)
@@ -428,4 +373,38 @@ class JavascriptMessageInterpreter: NSObject {
         }
     }
     
+    
+    private func verified(jsonRPCObject: JsonRPCObject, webview: WKWebView) -> VerifiedJSONRPCObject? {
+        guard let handle = jsonRPCObject.getParamsValue(for: MaracaConstants.Keys.handle.rawValue) as? Int else {
+            Utility.sendErrorResponse(withError: SKTResult.E_INVALIDHANDLE,
+                                     webView: webview,
+                                     handle: nil,
+                                     responseId: nil)
+            return nil
+        }
+        
+        guard let responseId = jsonRPCObject.id as? Int else {
+            let errorResponseJsonRpc = Utility.constructErrorResponse(error: SKTResult.E_INVALIDPARAMETER,
+                                                                     errorMessage: "The id was not specified",
+                                                                     handle: handle,
+                                                                     responseId: nil)
+            Maraca.shared.activeClient?.replyToWebpage(with: errorResponseJsonRpc)
+            return nil
+        }
+        
+        return VerifiedJSONRPCObject(handle: handle, responseId: responseId, jsonRPCObject: jsonRPCObject)
+    }
+}
+
+
+
+fileprivate class VerifiedJSONRPCObject: JsonRPCObject {
+    let handle: Int
+    let responseId: Int
+    
+    init(handle: Int, responseId: Int, jsonRPCObject: JsonRPCObject) {
+        self.handle = handle
+        self.responseId = responseId
+        super.init(dictionary: jsonRPCObject.dictionary)
+    }
 }

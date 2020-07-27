@@ -8,7 +8,7 @@
 import Foundation
 
 /// Intercepts incoming JSON objects and translates into JSON-RPC format
-internal struct JsonRPCObject: CustomStringConvertible {
+internal class JsonRPCObject: CustomStringConvertible {
     
     let jsonrpc: String?
     
@@ -18,9 +18,10 @@ internal struct JsonRPCObject: CustomStringConvertible {
     let method: String?
     let params: [String: Any]?
     let result: [String: Any]?
+    let dictionary: [String: Any]
     
     init(dictionary: [String: Any]) {
-        
+        self.dictionary = dictionary
         self.jsonrpc = dictionary[MaracaConstants.Keys.jsonrpc.rawValue] as? String
         self.id = dictionary[MaracaConstants.Keys.id.rawValue]
         self.method = dictionary[MaracaConstants.Keys.method.rawValue] as? String
