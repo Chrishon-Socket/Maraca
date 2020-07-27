@@ -10,28 +10,40 @@ import WebKit.WKWebView
 
 class Utility {
     
-    internal static func convertToDictionary(text: String) -> JSONDictionary? {
+    internal static func convertToDictionary(text: String) -> Result<JSONDictionary, Error> {
         if let data = text.data(using: .utf8) {
             do {
-                return try JSONSerialization.jsonObject(with: data, options: []) as? JSONDictionary
+                guard let jsonDictionary = try JSONSerialization.jsonObject(with: data, options: []) as? JSONDictionary else {
+                    
+                    let error = MaracaError.malformedJson("Could not convert JSON string to JSON Dictionary")
+                    return .failure(error)
+                }
+                return .success(jsonDictionary)
             } catch {
                 DebugLogger.shared.addDebugMessage("\(String(describing: type(of: self))) - Error converting JSON string to dictionary. Error: \(error)")
+                return .failure(error)
             }
         }
-        return nil
+        
+        let error = MaracaError.malformedJson("Could not convert JSON string to Data")
+        return .failure(error)
     }
     
-    internal static func convertJsonRpcToString(_ jsonRpc: JSONDictionary) -> String? {
+    internal static func convertJsonRpcToString(_ jsonRpc: JSONDictionary) -> Result<String, Error> {
         do {
             let jsonAsData = try JSONSerialization.data(withJSONObject: jsonRpc, options: [])
-            return String(data: jsonAsData, encoding: String.Encoding.utf8)
+            guard let jsonString = String(data: jsonAsData, encoding: String.Encoding.utf8) else {
+                let error = MaracaError.malformedJson("Could not construct String from JSON dictionary")
+                return .failure(error)
+            }
+            return .success(jsonString)
         } catch let error {
             DebugLogger.shared.addDebugMessage("\(String(describing: type(of: self))) - Error converting JsonRpc object to String: \(error)")
-            return nil
+            return .failure(error)
         }
     }
     
-    internal static func constructSKTCaptureProperty(from jsonRPCObject: JsonRPCObject) -> SKTCaptureProperty? {
+    internal static func constructSKTCaptureProperty(from jsonRPCObject: JsonRPCObject) -> Result<SKTCaptureProperty, Error> {
         
         guard
             let property = jsonRPCObject.getParamsValue(for: MaracaConstants.Keys.property.rawValue) as? [String : Any],
@@ -39,13 +51,18 @@ class Utility {
             let type = property[MaracaConstants.Keys.type.rawValue] as? Int,
             let propertyID = SKTCapturePropertyID(rawValue: id),
             let propertyType = SKTCapturePropertyType(rawValue: type)
-            else { return nil }
+            else {
+                
+                let error = MaracaError.malformedJson("JSON dictionary did not contain necessary key-value pairs to construct SKTCaptureProperty")
+                return .failure(error)
+                
+        }
         
         let captureProperty = SKTCaptureProperty()
         captureProperty.id = propertyID
         captureProperty.type = propertyType
         
-        return captureProperty
+        return .success(captureProperty)
     }
     
     /// Construct a json dictionary with information based on the SKTResult
@@ -108,5 +125,25 @@ class Utility {
         ]
         
         return responseJsonRpc
+    }
+    
+    internal static func constructErrorResponse(error: Error) -> JSONDictionary {
+        
+        let responseJsonRpc: JSONDictionary = [
+            MaracaConstants.Keys.jsonrpc.rawValue:  Maraca.jsonRpcVersion ?? Maraca.defaultJsonRpcVersion,
+            MaracaConstants.Keys.error.rawValue: [
+                MaracaConstants.Keys.message.rawValue: error.localizedDescription,
+            ]
+        ]
+        
+        return responseJsonRpc
+    }
+    
+    internal static func convertErrorToJSONString(error: Error) -> Result<String, Error> {
+        
+        let errorJSONDictionary = constructErrorResponse(error: error)
+        
+        return convertJsonRpcToString(errorJSONDictionary)
+        
     }
 }

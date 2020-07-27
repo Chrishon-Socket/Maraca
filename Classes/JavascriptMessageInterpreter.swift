@@ -42,53 +42,96 @@ class JavascriptMessageInterpreter: NSObject {
             return false
         }
         
+        interpretIncomingJavascript(messageHandler: messageHandler, webview: webview, messageBody: messageBody)
+        
+        return true
+    }
+    
+    private func interpretIncomingJavascript(messageHandler: Maraca.MaracaMessageHandlers, webview: WKWebView, messageBody: String) {
+        
         switch messageHandler {
         case .maracaSendJsonRpc:
             
-            guard let dictionary = Utility.convertToDictionary(text: messageBody) else {
-                return false
-            }
+            let convertedDictionaryResult = Utility.convertToDictionary(text: messageBody)
             
-            let jsonRPCObject = JsonRPCObject(dictionary: dictionary)
-            if let jsonRPCVersion = jsonRPCObject.jsonrpc {
-                delegate?.interpreter(self, didReceiveJSONRPC: jsonRPCVersion)
-            }
-            
-            guard
-                let method = jsonRPCObject.method,
-                let captureJSMethod = Maraca.CaptureJSMethod(rawValue: method)
-                else {
-                    DebugLogger.shared.addDebugMessage("\(String(describing: type(of: self))) - Unable to build CaptureJSMethod enum value. message body: \(messageBody)\n")
-                    DebugLogger.shared.addDebugMessage("\(String(describing: type(of: self))) - dictionary: \(dictionary)\n")
-                    DebugLogger.shared.addDebugMessage("\(String(describing: type(of: self))) - jsonRpcObject: \(jsonRPCObject)\n")
-                    return false
-            }
-            
-            switch captureJSMethod {
-            case Maraca.CaptureJSMethod.openClient:
+            switch convertedDictionaryResult {
+            case .success(let jsonDictionary):
                 
-                openClient(with: jsonRPCObject, webview: webview)
+                let jsonRPCObject = JsonRPCObject(dictionary: jsonDictionary)
+                if let jsonRPCVersion = jsonRPCObject.jsonrpc {
+                    delegate?.interpreter(self, didReceiveJSONRPC: jsonRPCVersion)
+                }
                 
-            case Maraca.CaptureJSMethod.openDevice:
+                guard
+                    let method = jsonRPCObject.method,
+                    let captureJSMethod = Maraca.CaptureJSMethod(rawValue: method)
+                    else {
+                        DebugLogger.shared.addDebugMessage("\(String(describing: type(of: self))) - Unable to build CaptureJSMethod enum value. message body: \(messageBody)\n")
+                        DebugLogger.shared.addDebugMessage("\(String(describing: type(of: self))) - dictionary: \(jsonDictionary)\n")
+                        DebugLogger.shared.addDebugMessage("\(String(describing: type(of: self))) - jsonRpcObject: \(jsonRPCObject)\n")
+                        
+                        let error = MaracaError.malformedJson("The JSON RPC object did contain the expected key-value pair: 'method'")
+                        sendEarlyFailureMessage(error: error, webview: webview)
+                        return
+                }
                 
-                openDevice(jsonRPCObject: jsonRPCObject, webview: webview)
+                performRequestedAction(captureJSMethod: captureJSMethod, jsonRPCObject: jsonRPCObject, webview: webview)
                 
-            case Maraca.CaptureJSMethod.close:
+            case .failure(let error):
                 
-                close(jsonRPCObject: jsonRPCObject, webview: webview)
-                
-            case Maraca.CaptureJSMethod.getProperty:
-                
-                getProperty(jsonRPCObject: jsonRPCObject, webview: webview)
-                
-            case Maraca.CaptureJSMethod.setProperty:
-                
-                setProperty(jsonRPCObject: jsonRPCObject, webview: webview)
-                
+                sendEarlyFailureMessage(error: error, webview: webview)
             }
         }
+    }
+    
+    private func performRequestedAction(captureJSMethod: Maraca.CaptureJSMethod, jsonRPCObject: JsonRPCObject, webview: WKWebView) {
         
-        return true
+        switch captureJSMethod {
+        case Maraca.CaptureJSMethod.openClient:
+            
+            openClient(with: jsonRPCObject, webview: webview)
+            
+        case Maraca.CaptureJSMethod.openDevice:
+            
+            openDevice(jsonRPCObject: jsonRPCObject, webview: webview)
+            
+        case Maraca.CaptureJSMethod.close:
+            
+            close(jsonRPCObject: jsonRPCObject, webview: webview)
+            
+        case Maraca.CaptureJSMethod.getProperty:
+            
+            getProperty(jsonRPCObject: jsonRPCObject, webview: webview)
+            
+        case Maraca.CaptureJSMethod.setProperty:
+            
+            setProperty(jsonRPCObject: jsonRPCObject, webview: webview)
+            
+        }
+    }
+    
+    private func sendEarlyFailureMessage(error: Error, webview: WKWebView) {
+        
+        var javascript = "window.maraca.replyJsonRpc('"
+        
+        let errorJSONStringResult = Utility.convertErrorToJSONString(error: error)
+        switch errorJSONStringResult {
+        case .success(let errorJSONString):
+            javascript.write(errorJSONString)
+        case .failure(let error):
+            let errorMessage = "Error converting JSON to String: \(error.localizedDescription)"
+            javascript.write(errorMessage)
+        }
+        
+        javascript.write("'); ")
+        
+        webview.evaluateJavaScript(javascript, completionHandler: { (object, error) in
+            if let error = error {
+                DebugLogger.shared.addDebugMessage("\(String(describing: type(of: self))) - Error evaluating javascript expression: \(javascript). Error: \(error)\n")
+            } else {
+                DebugLogger.shared.addDebugMessage("\(String(describing: type(of: self))) - Successfully evaluated javascript expression: \(javascript)\n")
+            }
+        })
     }
     
     private func openClient(with jsonRPCObject: JsonRPCObject, webview: WKWebView) {
@@ -128,15 +171,31 @@ class JavascriptMessageInterpreter: NSObject {
                                                                          handle: nil,
                                                                          responseId: jsonRPCObject.id as? Int)
                 
-                
-                guard let jsonAsString = Utility.convertJsonRpcToString(errorResponseJsonRpc) else { return }
-                
-                // Refer to replyJSonRpc and receiveJsonRPC functions
-                // REceive used for when received decoded data
-                // reply for when replying back to web page that you opened the client, set a property etc.
-                
                 var javascript = "window.maraca.replyJsonRpc('"
-                javascript.write(jsonAsString)
+                
+                let jsonStringResult = Utility.convertJsonRpcToString(errorResponseJsonRpc)
+                switch jsonStringResult {
+                case .success(let jsonString):
+                    
+                    // Refer to replyJSonRpc and receiveJsonRPC functions
+                    // REceive used for when received decoded data
+                    // reply for when replying back to web page that you opened the client, set a property etc.
+                    
+                    
+                    javascript.write(jsonString)
+                    
+                    
+                case .failure(let error):
+                    let errorJSONStringResult = Utility.convertErrorToJSONString(error: error)
+                    switch errorJSONStringResult {
+                    case .success(let errorJSONString):
+                        javascript.write(errorJSONString)
+                    case .failure(let error):
+                        let errorMessage = "Error converting JSON to String: \(error.localizedDescription)"
+                        javascript.write(errorMessage)
+                    }
+                }
+                
                 javascript.write("'); ")
                 
                 webview.evaluateJavaScript(javascript, completionHandler: { (object, error) in
@@ -290,7 +349,14 @@ class JavascriptMessageInterpreter: NSObject {
             return
         }
         
-        guard let captureProperty = Utility.constructSKTCaptureProperty(from: jsonRPCObject) else {
+        let capturePropertyResult = Utility.constructSKTCaptureProperty(from: jsonRPCObject)
+        switch capturePropertyResult {
+        case .success(let captureProperty):
+            Maraca.shared.activeClient?.getProperty(with: handle,
+                                                    responseId: responseId,
+                                                    property: captureProperty)
+            
+        case .failure(_):
             // The values sent (property Id and property type) were invalid
             Utility.sendErrorResponse(withError: SKTResult.E_INVALIDPARAMETER,
                                      webView: webview,
@@ -298,7 +364,7 @@ class JavascriptMessageInterpreter: NSObject {
                                      responseId: responseId)
             return
         }
-        Maraca.shared.activeClient?.getProperty(with: handle, responseId: responseId, property: captureProperty)
+        
     }
     
     private func setProperty(jsonRPCObject: JsonRPCObject, webview: WKWebView) {
@@ -321,8 +387,7 @@ class JavascriptMessageInterpreter: NSObject {
         }
         
         guard
-            let propertyFromJson = jsonRPCObject.getParamsValue(for: MaracaConstants.Keys.property.rawValue) as? [String : Any],
-            let captureProperty = Utility.constructSKTCaptureProperty(from: jsonRPCObject)
+            let propertyFromJson = jsonRPCObject.getParamsValue(for: MaracaConstants.Keys.property.rawValue) as? [String : Any]
         else {
             // The values sent were invalid or nil
             Utility.sendErrorResponse(withError: SKTResult.E_INVALIDPARAMETER,
@@ -332,27 +397,35 @@ class JavascriptMessageInterpreter: NSObject {
             return
         }
         
-        if let propertyValue = propertyFromJson[MaracaConstants.Keys.value.rawValue] {
-            do  {
-                try captureProperty.setPropertyValue(using: propertyValue)
-            } catch let error {
-                
-                DebugLogger.shared.addDebugMessage("\(String(describing: type(of: self))) - Error setting the value for SKTCaptureProperty: \(error)")
-                
-                // Send an error response Json back to the web page
-                // if an SKTCaptureProperty cannot be constructed
-                // from the dictionary sent from the webpage
-                let errorResponseJsonRpc = Utility.constructErrorResponse(error: SKTResult.E_INVALIDPARAMETER,
-                                                                         errorMessage: error.localizedDescription,
-                                                                         handle: Maraca.shared.activeClient?.handle,
-                                                                         responseId: responseId)
-                
-                Maraca.shared.activeClient?.replyToWebpage(with: errorResponseJsonRpc)
+        let capturePropertyResult = Utility.constructSKTCaptureProperty(from: jsonRPCObject)
+        switch capturePropertyResult {
+        case .success(let captureProperty):
+            
+            if let propertyValue = propertyFromJson[MaracaConstants.Keys.value.rawValue] {
+                do  {
+                    try captureProperty.setPropertyValue(using: propertyValue)
+                } catch let error {
+                    
+                    DebugLogger.shared.addDebugMessage("\(String(describing: type(of: self))) - Error setting the value for SKTCaptureProperty: \(error)")
+                    
+                    // Send an error response Json back to the web page
+                    // if an SKTCaptureProperty cannot be constructed
+                    // from the dictionary sent from the webpage
+                    let errorResponseJsonRpc = Utility.constructErrorResponse(error: SKTResult.E_INVALIDPARAMETER,
+                                                                             errorMessage: error.localizedDescription,
+                                                                             handle: Maraca.shared.activeClient?.handle,
+                                                                             responseId: responseId)
+                    
+                    Maraca.shared.activeClient?.replyToWebpage(with: errorResponseJsonRpc)
+                }
             }
+            
+            Maraca.shared.activeClient?.setProperty(with: handle, responseId: responseId, property: captureProperty)
+            
+        case .failure(let error):
+            let errorJSONDictionary = Utility.constructErrorResponse(error: error)
+            Maraca.shared.activeClient?.replyToWebpage(with: errorJSONDictionary)
         }
-        
-        Maraca.shared.activeClient?.setProperty(with: handle, responseId: responseId, property: captureProperty)
-        
     }
     
 }
