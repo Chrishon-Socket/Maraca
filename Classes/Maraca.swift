@@ -15,7 +15,7 @@ public final class Maraca: NSObject {
     
     public private(set) weak var capture: CaptureHelper?
     
-    private var numberOfFailedOpenCaptureAttempts: Int = 0
+    private var remainingOpenCaptureRetries: Int = 2
     
     private weak var delegate: MaracaDelegate?
     
@@ -152,7 +152,7 @@ extension Maraca {
                 completion?(result)
             } else {
 
-                if strongSelf.numberOfFailedOpenCaptureAttempts == 2 {
+                if strongSelf.remainingOpenCaptureRetries == 0 {
 
                     // Display an alert to the user to restart the app
                     // if attempts to open capture have failed twice
@@ -165,7 +165,7 @@ extension Maraca {
 
                     // Attempt to open capture again
                     DebugLogger.shared.addDebugMessage("\(String(describing: type(of: self))) - Failed to open capture. attempting again...\n")
-                    strongSelf.numberOfFailedOpenCaptureAttempts += 1
+                    strongSelf.remainingOpenCaptureRetries -= 1
                     strongSelf.begin(withAppKey: appKey, appId: appId, developerId: developerId)
                 }
             }
