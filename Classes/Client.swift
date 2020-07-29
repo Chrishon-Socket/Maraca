@@ -148,46 +148,50 @@ extension Client {
         notifyWebpage(with: responseJson)
     }
     
-    internal func hasPreviouslyOpenedDevice(with deviceGuid: String) -> Bool {
-            return Array(openedDevices.values).filter { return $0.guid == deviceGuid }.count > 0
-        }
+    internal func hasPreviouslyOpened(device: CaptureHelperDevice) -> Bool {
+        return filterThroughOpenedDevices(matching: device) != nil
+    }
         
     internal func getClientDevice(for device: CaptureHelperDevice) -> ClientDevice? {
-        return Array(openedDevices.values).filter { return $0.guid == device.deviceInfo.guid }.first
+        return filterThroughOpenedDevices(matching: device)
+    }
+    
+    private func filterThroughOpenedDevices(matching device: CaptureHelperDevice) -> ClientDevice? {
+        guard
+            let deviceGuid = device.deviceInfo.guid,
+            let devicePersistentUniqueIdentifier = SKTCaptureLayer.getPersistentUniqueIdentifier(forDeviceGUID: deviceGuid) else {
+            return nil
+        }
+        return Array(openedDevices.values)
+            .filter { return $0.devicePersistentUniqueIdentifier == devicePersistentUniqueIdentifier }.first
     }
     
     internal func resume() {
         guard didOpenCapture == true else {
-            fatalError()
+            return
         }
         
+        guard openedDevices.count > 0 else {
+            return
+        }
         
-//        Send device arrival?
-        
-        // TODO
-        // This has unintended issues and should not be used.
-        // The purpose was to stop all Javascript, UI animations, events, etc.
-        // from the web page when the active tab was switched
-        //        webview?.configuration.preferences.javaScriptEnabled = true
-        //        print("did resume client with handle: \(handle)")
-        
-        // TODO
-        // Send device arrivals, etc.
+        for (handle, _) in openedDevices {
+            changeOwnership(forClientDeviceWith: handle, isOwned: true)
+        }
     }
     
     internal func suspend() {
         guard didOpenCapture == true else {
-            fatalError()
+            return
         }
         
-//        Send device removal?
+        guard openedDevices.count > 0 else {
+            return
+        }
         
-        // TODO
-        // This has unintended issues and should not be used.
-        // The purpose was to stop all Javascript, UI animations, events, etc.
-        // from the web page when the active tab was switched
-        //        webview?.configuration.preferences.javaScriptEnabled = false
-        //        print("did suspend client with handle: \(handle)")
+        for (handle, _) in openedDevices {
+            changeOwnership(forClientDeviceWith: handle, isOwned: false)
+        }
     }
     
     // For responding back to a web page that has
@@ -266,7 +270,7 @@ extension Client {
 extension Client: ClientReceiverProtocol {
     
     internal func getProperty(property: SKTCaptureProperty, responseId: Int, completion: @escaping ClientReceiverCompletionHandler) {
-        Maraca.shared.capture?.getProperty(property) { (result, property) in
+        Maraca.shared.capture.getProperty(property) { (result, property) in
             
             guard result == .E_NOERROR else {
                 
@@ -308,7 +312,7 @@ extension Client: ClientReceiverProtocol {
     
     internal func setProperty(property: SKTCaptureProperty, responseId: Int, completion: @escaping ClientReceiverCompletionHandler) {
         
-        Maraca.shared.capture?.setProperty(property) { (result, property) in
+        Maraca.shared.capture.setProperty(property) { (result, property) in
             
             guard result == .E_NOERROR else {
                 
