@@ -15,12 +15,18 @@ import SKTCapture
 // maintains references to which CaptureHelperDevices have
 // been opened by which Client objects
 
-internal struct ClientDevice: ClientReceiverProtocol {
+internal struct ClientDevice: ClientReceiverProtocol, Equatable {
+    
+    static func ==(lhs: ClientDevice, rhs: ClientDevice) -> Bool {
+        return lhs.devicePersistentUniqueIdentifier == rhs.devicePersistentUniqueIdentifier
+            || lhs.handle == rhs.handle
+            || lhs.guid == rhs.guid
+    }
     
     // MARK: - Variables
     
     /// Wrapper for bluetooth device
-    private let captureHelperDevice: CaptureHelperDevice
+    internal let captureHelperDevice: CaptureHelperDevice
     
     /// GUID of the bluetooth device
     internal var guid: String? {
@@ -29,6 +35,15 @@ internal struct ClientDevice: ClientReceiverProtocol {
     
     /// Unique identifer for the ClientDevice object
     internal let handle: ClientHandle
+    
+    internal var devicePersistentUniqueIdentifier: String? {
+        guard let deviceGuid = guid else {
+            return nil
+        }
+        return SKTCaptureLayer.getPersistentUniqueIdentifier(forDeviceGUID: deviceGuid)
+        
+    }
+    
     
     
     
