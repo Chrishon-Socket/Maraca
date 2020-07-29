@@ -60,6 +60,12 @@ extension Client {
         // => send device Arrivals if devices connected
         // => return a handle
         
+        guard didOpenCapture == false else {
+            return handle
+        }
+        
+        handle = Int(Date().timeIntervalSince1970)
+        
         guard appInfo.verify(withBundleId: appInfo.appID) == true else {
             throw MaracaError.invalidAppInfo("The AppInfo parameters are invalid")
         }
@@ -69,12 +75,6 @@ extension Client {
         
         self.webview = webview
         self.webpageURLString = webview.url?.absoluteString
-        
-        handle = Int(Date().timeIntervalSince1970)
-        
-        guard didOpenCapture == false else {
-            return handle
-        }
         
         return handle
     }
