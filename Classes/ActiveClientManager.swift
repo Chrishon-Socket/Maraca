@@ -294,7 +294,8 @@ extension ActiveClientManager {
                 return
         }
        
-        guard result == SKTResult.E_NOERROR else {
+        // E_CANCEL for case where Overlay view is cancelled
+        guard result == SKTResult.E_NOERROR || result == SKTResult.E_CANCEL else {
            
             let errorResponseJsonRpc = Utility.constructErrorResponse(error: result,
                                                                     errorMessage: "There was an error receiving decoded data from the Socket Mobile device: \(String(describing: device.deviceInfo.name)). Error: \(result)",
