@@ -14,7 +14,7 @@ class TabsSelectionView: UIView {
     
     private var tabs: [Tab] = []
     
-    private lazy  var collectionView: UICollectionView = {
+    private lazy var collectionView: UICollectionView = {
         let layout = UICollectionViewFlowLayout()
         layout.minimumLineSpacing = 0
         layout.minimumInteritemSpacing = 0
@@ -58,11 +58,15 @@ class TabsSelectionView: UIView {
         collectionView.reloadData()
         let lastIndexPath = IndexPath(item: tabs.count - 1, section: 0)
         collectionView.scrollToItem(at: lastIndexPath, at: UICollectionViewScrollPosition.right, animated: true)
+        collectionView.selectItem(at: lastIndexPath, animated: true, scrollPosition: UICollectionViewScrollPosition.right)
     }
     
     func updateTab(at index: Int, with tab: Tab) {
         tabs[index] = tab
         collectionView.reloadData()
+        let indexPath = IndexPath(item: index, section: 0)
+        collectionView.scrollToItem(at: indexPath, at: UICollectionViewScrollPosition.right, animated: true)
+        collectionView.selectItem(at: indexPath, animated: true, scrollPosition: UICollectionViewScrollPosition.right)
     }
     
     func removeTab(at index: Int) {

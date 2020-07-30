@@ -10,6 +10,13 @@ import UIKit
 
 class TabCell: UICollectionViewCell {
     
+    override var isSelected: Bool {
+        didSet {
+            containerView.backgroundColor = isSelected ? .red : .groupTableViewBackground
+            titleLabel.textColor = isSelected ? .white : .black
+        }
+    }
+    
     private var containerView: UIView = {
         let v = UIView()
         v.translatesAutoresizingMaskIntoConstraints = false
