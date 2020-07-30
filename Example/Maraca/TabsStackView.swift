@@ -31,7 +31,6 @@ class TabsStackView: UIView {
                 return
             }
         
-            Maraca.shared.resignActiveClient()
             Maraca.shared.activateClient(clientToResume)
         }
     }

@@ -13,7 +13,7 @@ public final class Maraca: NSObject {
     
     // MARK: - Variables
     
-    public private(set) weak var capture: CaptureHelper?
+    public private(set) weak var capture: CaptureHelper!
     
     private var remainingOpenCaptureRetries: Int = 2
     
@@ -24,10 +24,7 @@ public final class Maraca: NSObject {
     public private(set) var clientsList: [ClientHandle : Client] = [:]
     
     public private(set) var activeClient: Client?
-    public private(set) var activeClientIndexPath: IndexPath?
-    
     public private(set) var previousActiveClient: Client?
-    public private(set) var previousActiveClientIndexPath: IndexPath?
     
     // This will ensure that we always use the json rpc \
     // version that the web page specifies
@@ -143,8 +140,8 @@ extension Maraca {
         AppInfo.appID = appId
         AppInfo.developerID = developerId
         
-        capture?.dispatchQueue = DispatchQueue.main
-        capture?.openWithAppInfo(AppInfo) { [weak self] (result) in
+        capture.dispatchQueue = DispatchQueue.main
+        capture.openWithAppInfo(AppInfo) { [weak self] (result) in
             guard let strongSelf = self else { return }
             DebugLogger.shared.addDebugMessage("\(String(describing: type(of: strongSelf))) - Result of Capture initialization: \(result.rawValue)")
             
@@ -166,14 +163,14 @@ extension Maraca {
                     // Attempt to open capture again
                     DebugLogger.shared.addDebugMessage("\(String(describing: type(of: self))) - Failed to open capture. attempting again...\n")
                     strongSelf.remainingOpenCaptureRetries -= 1
-                    strongSelf.begin(withAppKey: appKey, appId: appId, developerId: developerId)
+                    strongSelf.begin(withAppKey: appKey, appId: appId, developerId: developerId, completion: completion)
                 }
             }
         }
     }
     
     public func stop(_ completion: ((Bool) -> ())?) {
-        capture?.closeWithCompletionHandler({ (result) in
+        capture.closeWithCompletionHandler({ (result) in
             if result == SKTResult.E_NOERROR {
                 completion?(true)
             } else {
@@ -198,29 +195,28 @@ extension Maraca {
 
 extension Maraca {
     
-    public func activateClient(at indexPath: IndexPath) {
-        let clientAtIndexPath = Array(clientsList.values)[indexPath.item]
-        
-        if activeClient != clientAtIndexPath {
-            
-            previousActiveClientIndexPath = activeClientIndexPath
-            previousActiveClient = activeClient
-            
-            activeClientIndexPath = indexPath
-            activeClient = clientAtIndexPath
-            
-            activeClient?.resume()
-            assumeCaptureDelegate()
-        }
-    }
-    
     public func activateClient(_ client: Client) {
-        guard let arrayElementIndex = Array(clientsList.values).firstIndex(of: client)
-            else { return }
-        previousActiveClientIndexPath = activeClientIndexPath
-        previousActiveClient = activeClient
+        guard let selectedClientIndex = Array(clientsList.values).firstIndex(of: client) else {
+            return
+        }
         
-        activeClientIndexPath = IndexPath(item: Int(arrayElementIndex), section: 0)
+        // This prevents sending duplicate device presence events
+        // for the first Client opened in the App session, and resends all device presence events
+        // for new Clients
+        // Reason:
+        // Assuming Capture Delegate `capture.pushDelegate(...)`
+        // will send all device presence events if it was not previously
+        // "assumed" (i.e. when the first Client object is opened)
+        // This causes duplica
+        var shouldResendDevicePresenceEvents: Bool = true
+        
+        if previousActiveClient == nil {
+            shouldResendDevicePresenceEvents = false
+        }
+        
+        previousActiveClient = activeClient
+        activeClient?.suspend()
+        activeClient = Array(clientsList.values)[selectedClientIndex]
         
         assumeCaptureDelegate()
         
@@ -229,13 +225,10 @@ extension Maraca {
         // should be called, which is expected to resume all CaptureJS functions
         // (i.e. resend device arrivals, etc.)
         
-        if activeClient != nil && activeClient?.handle != Array(clientsList.values)[arrayElementIndex].handle {
-            activeClient = Array(clientsList.values)[arrayElementIndex]
-            activeClient?.resume()
-        } else {
-            // Otherwise, just set the active client
-            activeClient = Array(clientsList.values)[arrayElementIndex]
+        if shouldResendDevicePresenceEvents {
+            activeClientManager.resendDevicePresenceEvents()
         }
+        
     }
     
     public func activateClient(for url: URL) {
@@ -247,9 +240,9 @@ extension Maraca {
     }
     
     public func resignActiveClient() {
+        previousActiveClient = activeClient
         activeClient?.suspend()
         activeClient = nil
-        activeClientIndexPath = nil
     }
     
     public func closeAndDeleteClient(_ client: Client) {
@@ -258,7 +251,6 @@ extension Maraca {
         
         if activeClient == client {
             activeClient = nil
-            activeClientIndexPath = nil
         }
         
         clientsList.removeValue(forKey: client.handle)
@@ -341,12 +333,12 @@ extension Maraca {
     
     /// Re-assumes SKTCapture layer delegate
     public func assumeCaptureDelegate() {
-        capture?.pushDelegate(activeClientManager.captureDelegate)
+        capture.pushDelegate(activeClientManager.captureDelegate)
     }
     
     /// Resigns SKTCapture layer delegate to desired receiver
     public func resignCaptureDelegate(to: CaptureHelperAllDelegate) {
-        capture?.pushDelegate(to)
+        capture.pushDelegate(to)
     }
 }
 
@@ -405,18 +397,14 @@ extension Maraca: JavascriptMessageInterpreterDelegate {
         
         clientsList[clientHandle] = client
         
-        Maraca.shared.activateClient(client)
+        activateClient(client)
         
         delegate?.maraca?(self, webviewDidOpenCaptureWith: client)
     }
     
     func interpreter(_ interpreter: JavascriptMessageInterpreter, didClose client: Client, with handle: ClientHandle) {
+        closeAndDeleteClient(client)
         delegate?.maraca?(self, webviewDidCloseCaptureWith: client)
-        if activeClient == client {
-            activeClient = nil
-            activeClientIndexPath = nil
-        }
-        clientsList.removeValue(forKey: handle)
     }
     
 }
