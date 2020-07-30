@@ -171,7 +171,7 @@ extension Client {
             return
         }
         
-        guard openedDevices.count > 0 else {
+        guard openedDevices.isEmpty == false else {
             return
         }
         
@@ -185,7 +185,7 @@ extension Client {
             return
         }
         
-        guard openedDevices.count > 0 else {
+        guard openedDevices.isEmpty == false else {
             return
         }
         
