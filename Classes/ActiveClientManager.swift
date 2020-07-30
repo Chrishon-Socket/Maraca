@@ -129,7 +129,7 @@ class ActiveClientManager: NSObject {
     }
     
     private func sendDeviceArrivalEvents(for uncaughtOpenedCaptureDevices: [CaptureHelperDevice]) {
-        guard uncaughtOpenedCaptureDevices.count > 0 else {
+        guard uncaughtOpenedCaptureDevices.isEmpty == false else {
             return
         }
         
@@ -146,7 +146,7 @@ class ActiveClientManager: NSObject {
     }
     
     private func sendDeviceRemovalEvents(for expiredClientDevices: [ClientDevice]) {
-        guard expiredClientDevices.count > 0 else {
+        guard expiredClientDevices.isEmpty == false else {
             return
         }
         expiredClientDevices.forEach { (clientDevice) in
