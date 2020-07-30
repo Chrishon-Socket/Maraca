@@ -395,16 +395,3 @@ class JavascriptMessageInterpreter: NSObject {
         return VerifiedJSONRPCObject(handle: handle, responseId: responseId, jsonRPCObject: jsonRPCObject)
     }
 }
-
-
-
-fileprivate class VerifiedJSONRPCObject: JsonRPCObject {
-    let handle: Int
-    let responseId: Int
-    
-    init(handle: Int, responseId: Int, jsonRPCObject: JsonRPCObject) {
-        self.handle = handle
-        self.responseId = responseId
-        super.init(dictionary: jsonRPCObject.dictionary)
-    }
-}
