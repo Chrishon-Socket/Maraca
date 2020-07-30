@@ -407,9 +407,6 @@ extension SKTCaptureProperty {
                 MaracaConstants.Keys.name.rawValue: dataSourceName,
                 MaracaConstants.Keys.flags.rawValue: dataSource.flags.rawValue
             ]
-            
-        case .lastType:
-            throw MaracaError.outdatedVersion("There is a version incompatibility error")
         case .notApplicable, .object, .enum:
             throw MaracaError.propertyTypeNotSupported("The SKTCaptureProperty has type: \(type) which is not supported at this time")
         case .string:
@@ -517,8 +514,6 @@ extension SKTCaptureProperty {
             dataSource.flags = SKTCaptureDataSourceFlags(rawValue: flags)
             
             self.dataSource = dataSource
-        case .lastType:
-            throw MaracaError.outdatedVersion("There is a version incompatibility error")
         case .notApplicable, .object, .enum:
             throw MaracaError.propertyTypeNotSupported("The SKTCaptureProperty has type: \(type) which is not supported at this time")
         case .string:
