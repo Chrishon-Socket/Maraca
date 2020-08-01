@@ -112,9 +112,8 @@ class Utility {
     
     internal static func constructErrorResponse(error: SKTResult, errorMessage: String, handle: Int?, responseId: Int?) -> JSONDictionary {
         
-        let responseJsonRpc: JSONDictionary = [
+        var responseJsonRpc: JSONDictionary = [
             MaracaConstants.Keys.jsonrpc.rawValue:  Maraca.jsonRpcVersion ?? Maraca.defaultJsonRpcVersion,
-            MaracaConstants.Keys.id.rawValue:       responseId ?? 6,
             MaracaConstants.Keys.error.rawValue: [
                 MaracaConstants.Keys.code.rawValue: error.rawValue,
                 MaracaConstants.Keys.message.rawValue: errorMessage,
@@ -123,6 +122,10 @@ class Utility {
                 ]
             ]
         ]
+        
+        if let responseId = responseId {
+            responseJsonRpc[MaracaConstants.Keys.id.rawValue] = responseId
+        }
         
         return responseJsonRpc
     }

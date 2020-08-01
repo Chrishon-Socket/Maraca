@@ -407,10 +407,7 @@ extension SKTCaptureProperty {
                 MaracaConstants.Keys.name.rawValue: dataSourceName,
                 MaracaConstants.Keys.flags.rawValue: dataSource.flags.rawValue
             ]
-            
-        case .lastType:
-            throw MaracaError.outdatedVersion("There is a version incompatibility error")
-        case .none, .notApplicable, .object, .enum:
+        case .notApplicable, .object, .enum:
             throw MaracaError.propertyTypeNotSupported("The SKTCaptureProperty has type: \(type) which is not supported at this time")
         case .string:
             if self.stringValue?.containsEscapeCharacters() == true {
@@ -517,9 +514,7 @@ extension SKTCaptureProperty {
             dataSource.flags = SKTCaptureDataSourceFlags(rawValue: flags)
             
             self.dataSource = dataSource
-        case .lastType:
-            throw MaracaError.outdatedVersion("There is a version incompatibility error")
-        case .none, .notApplicable, .object, .enum:
+        case .notApplicable, .object, .enum:
             throw MaracaError.propertyTypeNotSupported("The SKTCaptureProperty has type: \(type) which is not supported at this time")
         case .string:
             self.stringValue = valueFromJson as? String
