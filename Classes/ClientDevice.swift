@@ -18,9 +18,7 @@ import SKTCapture
 internal struct ClientDevice: ClientReceiverProtocol, Equatable {
     
     static func ==(lhs: ClientDevice, rhs: ClientDevice) -> Bool {
-        return lhs.devicePersistentUniqueIdentifier == rhs.devicePersistentUniqueIdentifier
-            || lhs.handle == rhs.handle
-            || lhs.guid == rhs.guid
+        return lhs.guid == rhs.guid || lhs.handle == rhs.handle
     }
     
     // MARK: - Variables
@@ -35,15 +33,6 @@ internal struct ClientDevice: ClientReceiverProtocol, Equatable {
     
     /// Unique identifer for the ClientDevice object
     internal let handle: ClientHandle
-    
-    internal var devicePersistentUniqueIdentifier: String? {
-        guard let deviceGuid = guid else {
-            return nil
-        }
-        return SKTCaptureLayer.getPersistentUniqueIdentifier(forDeviceGUID: deviceGuid)
-        
-    }
-    
     
     
     
