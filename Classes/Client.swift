@@ -34,11 +34,17 @@ public class Client: NSObject, ClientConformanceProtocol {
     
     internal private(set) var openedDevices: [ClientDeviceHandle : ClientDevice] = [:]
     
-    
-    
-    
     required public override init() {
         super.init()
+    }
+    
+    // Keep track of device arrival events
+    // that have not been opened.
+    // Prevent sending duplicate JSON for device arrival events
+    internal var unopenedDevicePresenceEvents: Set<String> = Set<String>()
+    
+    internal func didSendJsonForDevice(withGuid deviceGuid: String) -> Bool {
+        return unopenedDevicePresenceEvents.contains(deviceGuid)
     }
 }
 
@@ -91,9 +97,21 @@ extension Client {
             ]
         ]
         
+        satisfyUnopened(device: captureHelperDevice)
+        
         replyToWebpage(with: responseJsonRpc)
         
         changeOwnership(forClientDeviceWith: clientDevice.handle, isOwned: true)
+    }
+    
+    private func satisfyUnopened(device: CaptureHelperDevice) {
+        // If this Client has previously received JSON
+        // for device arrival events but did NOT open
+        // the device,
+        // remove that deviceGuid from the list of unopened devices
+        if let deviceGuid = device.deviceInfo.guid, unopenedDevicePresenceEvents.contains(deviceGuid) {
+            unopenedDevicePresenceEvents.remove(deviceGuid)
+        }
     }
     
     internal func close(handle: ClientHandle, responseId: Int) {
@@ -157,13 +175,11 @@ extension Client {
     }
     
     private func filterThroughOpenedDevices(matching device: CaptureHelperDevice) -> ClientDevice? {
-        guard
-            let deviceGuid = device.deviceInfo.guid,
-            let devicePersistentUniqueIdentifier = SKTCaptureLayer.getPersistentUniqueIdentifier(forDeviceGUID: deviceGuid) else {
+        guard let deviceGuid = device.deviceInfo.guid else {
             return nil
         }
         return Array(openedDevices.values)
-            .filter { return $0.devicePersistentUniqueIdentifier == devicePersistentUniqueIdentifier }.first
+            .filter { return $0.guid == deviceGuid }.first
     }
     
     internal func resume() {
