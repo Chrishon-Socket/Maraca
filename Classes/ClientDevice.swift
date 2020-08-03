@@ -15,12 +15,16 @@ import SKTCapture
 // maintains references to which CaptureHelperDevices have
 // been opened by which Client objects
 
-internal struct ClientDevice: ClientReceiverProtocol {
+internal struct ClientDevice: ClientReceiverProtocol, Equatable {
+    
+    static func ==(lhs: ClientDevice, rhs: ClientDevice) -> Bool {
+        return lhs.guid == rhs.guid || lhs.handle == rhs.handle
+    }
     
     // MARK: - Variables
     
     /// Wrapper for bluetooth device
-    private let captureHelperDevice: CaptureHelperDevice
+    internal let captureHelperDevice: CaptureHelperDevice
     
     /// GUID of the bluetooth device
     internal var guid: String? {

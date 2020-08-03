@@ -24,11 +24,17 @@ class ViewController: UIViewController {
     
     // MARK: - UI Elements
     
+    private let tabsSelectionView = TabsSelectionView()
+        
+    private let tabsStackView = TabsStackView()
     
-    private var webview: WKWebView!
-    
-    
-
+    private var defaultToolbarItems: [UIBarButtonItem] {
+        return [
+            UIBarButtonItem(barButtonSystemItem: UIBarButtonItem.SystemItem.flexibleSpace, target: nil, action: nil),
+            UIBarButtonItem(barButtonSystemItem: UIBarButtonSystemItem.add, target: self, action: #selector(ViewController.addNewTab)),
+            UIBarButtonItem(barButtonSystemItem: UIBarButtonItem.SystemItem.flexibleSpace, target: nil, action: nil)
+        ]
+    }
     
     
     
@@ -41,6 +47,7 @@ class ViewController: UIViewController {
         super.viewDidLoad()
         // Do any additional setup after loading the view, typically from a nib.
 
+        setupNavigation()
         setupMaraca()
         
         // This can be called either in the Maraca Setup completion
@@ -79,43 +86,77 @@ extension ViewController {
             })
     }
     
-    private func setupUIElements() {
+    private func setupNavigation() {
+        
+        self.edgesForExtendedLayout = UIRectEdge()
+        
+        navigationController?.setNavigationBarHidden(true, animated: false)
+        
+        toolbarItems = defaultToolbarItems
+        
+        navigationController?.setToolbarHidden(false, animated: false)
+        
+        if #available(iOS 13.0, *) {
+            self.navigationController?.toolbar.barTintColor = UIColor.secondarySystemBackground
+        } else {
+            // Fallback on earlier versions
+            // Use default
+        }
+    }
     
-        webview = {
-            let w = WKWebView(frame: .zero, configuration: Maraca.shared.webViewConfiguration)
+    private func setupUIElements() {
+        
+        tabsSelectionView.didSelectItem { (indexPath, _) in
+            self.tabsStackView.pushTabToTop(index: indexPath.item)
+        }
+        view.addSubview(tabsSelectionView)
+        view.addSubview(tabsStackView)
+        
+        tabsSelectionView.leadingAnchor.constraint(equalTo: view.leadingAnchor).isActive = true
+        if #available(iOS 11.0, *) {
+            tabsSelectionView.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor).isActive = true
+            tabsStackView.bottomAnchor.constraint(equalTo: view.safeAreaLayoutGuide.bottomAnchor).isActive = true
+        } else {
+            // Fallback on earlier versions
+            tabsSelectionView.topAnchor.constraint(equalTo: view.topAnchor).isActive = true
+            tabsStackView.bottomAnchor.constraint(equalTo: view.bottomAnchor).isActive = true
+        }
+        tabsSelectionView.trailingAnchor.constraint(equalTo: view.trailingAnchor).isActive = true
+        tabsSelectionView.heightAnchor.constraint(equalToConstant: 120.0).isActive = true
+        
+        tabsStackView.leadingAnchor.constraint(equalTo: view.leadingAnchor).isActive = true
+        tabsStackView.topAnchor.constraint(equalTo: tabsSelectionView.bottomAnchor).isActive = true
+        tabsStackView.trailingAnchor.constraint(equalTo: view.trailingAnchor).isActive = true
+        
+        addNewTab()
+        
+    }
+    
+    @objc private func addNewTab() {
+        
+        let webview: TabWebview = {
+            let w = TabWebview(frame: .zero, configuration: Maraca.shared.webViewConfiguration)
             w.translatesAutoresizingMaskIntoConstraints = false
             w.contentMode = UIView.ContentMode.redraw
             w.navigationDelegate = self
             return w
         }()
         
-        view.addSubview(webview)
+        let url = getURLForTestPage()
         
-        webview.leadingAnchor.constraint(equalTo: view.leadingAnchor).isActive = true
-        if #available(iOS 11.0, *) {
-            webview.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor).isActive = true
-            webview.bottomAnchor.constraint(equalTo: view.safeAreaLayoutGuide.bottomAnchor).isActive = true
-        } else {
-            // Fallback on earlier versions
-            webview.topAnchor.constraint(equalTo: view.topAnchor).isActive = true
-            webview.bottomAnchor.constraint(equalTo: view.bottomAnchor).isActive = true
-        }
-        webview.trailingAnchor.constraint(equalTo: view.trailingAnchor).isActive = true
-        
-        loadTestPage()
-        
+        let tab = Tab(title: "some title", url: url, webview: webview)
+        tabsSelectionView.add(tab: tab)
+        tabsStackView.add(tab: tab)
     }
     
-    private func loadTestPage() {
+    private func getURLForTestPage() -> URL {
         let urlString = "https://capturesdkjavascript.z4.web.core.windows.net/maraca/test.html"
         
         guard let url = URL(string: urlString) else {
             fatalError("This URL no longer exists")
         }
         
-        let urlRequest = URLRequest(url: url)
-        webview.load(urlRequest)
-        
+        return url
     }
 }
 
@@ -149,26 +190,6 @@ extension ViewController {
 extension ViewController: WKNavigationDelegate {
     
     func webView(_ webView: WKWebView, decidePolicyFor navigationAction: WKNavigationAction, decisionHandler: @escaping (WKNavigationActionPolicy) -> Void) {
-        
-        if let webviewURL = webView.url?.absoluteString {
-            print("webview url from navigation: \(String(describing: webviewURL))")
-        }
-        switch navigationAction.navigationType {
-        case .backForward:
-            print("back forward")
-        case .formResubmitted:
-            print("form resubmitted")
-        case .formSubmitted:
-            print("form submitted")
-        case .linkActivated:
-            print("link activated")
-        case .other:
-            print("other")
-        case .reload:
-            print("reload")
-        }
-        
-        
         decisionHandler( WKNavigationActionPolicy.allow )
     }
     
@@ -186,7 +207,7 @@ extension ViewController: WKNavigationDelegate {
         //
         // In this case, we want to retrieve the client that was opened in step 2
         // and reactivate this client
-        if let webpageURLString = webView.url?.absoluteString, let client = Maraca.shared.getClient(for: webpageURLString) {
+        if let client = Maraca.shared.getClients(for: webView)?.first {
             
             Maraca.shared.activateClient(client)
         } else {
@@ -210,9 +231,21 @@ extension ViewController: WKNavigationDelegate {
     }
     
     func webView(_ webView: WKWebView, didFinish navigation: WKNavigation!) {
-        
+        updateTab(for: webView as! TabWebview)
     }
     
+    private func updateTab(for webView: TabWebview) {
+        
+        guard let title = webView.title, let url = webView.url else {
+            return
+        }
+        let updatedTab = Tab(title: title, url: url, webview: webView)
+        
+        let index = tabsSelectionView.indexOf(tab: updatedTab) ?? 0
+        
+        tabsSelectionView.updateTab(at: index, with: updatedTab)
+        tabsStackView.updateTab(at: index, tab: updatedTab)
+    }
 }
 
 

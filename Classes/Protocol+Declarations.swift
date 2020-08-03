@@ -659,12 +659,12 @@ internal protocol ClientConformanceProtocol where Self: Client {
      Returns whether a device with GUID has been opened by the Client
      
      - Parameters:
-        - deviceGUID: The GUID of the device. Provided through `SKTCapture` framework
+        - device: The `SKTCapture` wrapper for the bluetooth device
      
      - Returns:
         - Returns whether a device with GUID has been opened by the Client
      */
-    func hasPreviouslyOpenedDevice(with deviceGuid: String) -> Bool
+    func hasPreviouslyOpened(device: CaptureHelperDevice) -> Bool
     
     /**
      Returns an internal Wrapper object for the device if one already exists and has been opened

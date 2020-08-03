@@ -34,11 +34,17 @@ public class Client: NSObject, ClientConformanceProtocol {
     
     internal private(set) var openedDevices: [ClientDeviceHandle : ClientDevice] = [:]
     
-    
-    
-    
     required public override init() {
         super.init()
+    }
+    
+    // Keep track of device arrival events
+    // that have not been opened.
+    // Prevent sending duplicate JSON for device arrival events
+    internal var unopenedDevicePresenceEvents: Set<String> = Set<String>()
+    
+    internal func didSendJsonForDevice(withGuid deviceGuid: String) -> Bool {
+        return unopenedDevicePresenceEvents.contains(deviceGuid)
     }
 }
 
@@ -60,6 +66,12 @@ extension Client {
         // => send device Arrivals if devices connected
         // => return a handle
         
+        guard didOpenCapture == false else {
+            return handle
+        }
+        
+        handle = Int(Date().timeIntervalSince1970)
+        
         guard appInfo.verify(withBundleId: appInfo.appID) == true else {
             throw MaracaError.invalidAppInfo("The AppInfo parameters are invalid")
         }
@@ -69,12 +81,6 @@ extension Client {
         
         self.webview = webview
         self.webpageURLString = webview.url?.absoluteString
-        
-        handle = Int(Date().timeIntervalSince1970)
-        
-        guard didOpenCapture == false else {
-            return handle
-        }
         
         return handle
     }
@@ -91,9 +97,21 @@ extension Client {
             ]
         ]
         
+        satisfyUnopened(device: captureHelperDevice)
+        
         replyToWebpage(with: responseJsonRpc)
         
         changeOwnership(forClientDeviceWith: clientDevice.handle, isOwned: true)
+    }
+    
+    private func satisfyUnopened(device: CaptureHelperDevice) {
+        // If this Client has previously received JSON
+        // for device arrival events but did NOT open
+        // the device,
+        // remove that deviceGuid from the list of unopened devices
+        if let deviceGuid = device.deviceInfo.guid, unopenedDevicePresenceEvents.contains(deviceGuid) {
+            unopenedDevicePresenceEvents.remove(deviceGuid)
+        }
     }
     
     internal func close(handle: ClientHandle, responseId: Int) {
@@ -148,46 +166,48 @@ extension Client {
         notifyWebpage(with: responseJson)
     }
     
-    internal func hasPreviouslyOpenedDevice(with deviceGuid: String) -> Bool {
-            return Array(openedDevices.values).filter { return $0.guid == deviceGuid }.count > 0
-        }
+    internal func hasPreviouslyOpened(device: CaptureHelperDevice) -> Bool {
+        return filterThroughOpenedDevices(matching: device) != nil
+    }
         
     internal func getClientDevice(for device: CaptureHelperDevice) -> ClientDevice? {
-        return Array(openedDevices.values).filter { return $0.guid == device.deviceInfo.guid }.first
+        return filterThroughOpenedDevices(matching: device)
+    }
+    
+    private func filterThroughOpenedDevices(matching device: CaptureHelperDevice) -> ClientDevice? {
+        guard let deviceGuid = device.deviceInfo.guid else {
+            return nil
+        }
+        return Array(openedDevices.values)
+            .filter { return $0.guid == deviceGuid }.first
     }
     
     internal func resume() {
         guard didOpenCapture == true else {
-            fatalError()
+            return
         }
         
+        guard openedDevices.isEmpty == false else {
+            return
+        }
         
-//        Send device arrival?
-        
-        // TODO
-        // This has unintended issues and should not be used.
-        // The purpose was to stop all Javascript, UI animations, events, etc.
-        // from the web page when the active tab was switched
-        //        webview?.configuration.preferences.javaScriptEnabled = true
-        //        print("did resume client with handle: \(handle)")
-        
-        // TODO
-        // Send device arrivals, etc.
+        for (handle, _) in openedDevices {
+            changeOwnership(forClientDeviceWith: handle, isOwned: true)
+        }
     }
     
     internal func suspend() {
         guard didOpenCapture == true else {
-            fatalError()
+            return
         }
         
-//        Send device removal?
+        guard openedDevices.isEmpty == false else {
+            return
+        }
         
-        // TODO
-        // This has unintended issues and should not be used.
-        // The purpose was to stop all Javascript, UI animations, events, etc.
-        // from the web page when the active tab was switched
-        //        webview?.configuration.preferences.javaScriptEnabled = false
-        //        print("did suspend client with handle: \(handle)")
+        for (handle, _) in openedDevices {
+            changeOwnership(forClientDeviceWith: handle, isOwned: false)
+        }
     }
     
     // For responding back to a web page that has
@@ -266,7 +286,7 @@ extension Client {
 extension Client: ClientReceiverProtocol {
     
     internal func getProperty(property: SKTCaptureProperty, responseId: Int, completion: @escaping ClientReceiverCompletionHandler) {
-        Maraca.shared.capture?.getProperty(property) { (result, property) in
+        Maraca.shared.capture.getProperty(property) { (result, property) in
             
             guard result == .E_NOERROR else {
                 
@@ -308,7 +328,7 @@ extension Client: ClientReceiverProtocol {
     
     internal func setProperty(property: SKTCaptureProperty, responseId: Int, completion: @escaping ClientReceiverCompletionHandler) {
         
-        Maraca.shared.capture?.setProperty(property) { (result, property) in
+        Maraca.shared.capture.setProperty(property) { (result, property) in
             
             guard result == .E_NOERROR else {
                 

@@ -245,32 +245,7 @@ class JavascriptMessageInterpreter: NSObject {
             return
         }
         
-        // Confirm that CaptureHelper has still opened the device
-        
-        // First, combine all CaptureHelperDevices and CaptureHelperDeviceManagers
-        // into a single array
-        if let deviceManagers = Maraca.shared.capture?.getDeviceManagers(), let devices = Maraca.shared.capture?.getDevices() {
-            let allCaptureDevices = deviceManagers + devices
-            
-            // Then filter through this combined array to find
-            // the device with this GUID
-            if let captureHelperDevice = allCaptureDevices.filter ({ $0.deviceInfo.guid == deviceGUID }).first {
-                
-                // Finally, open this device
-                client.open(captureHelperDevice: captureHelperDevice, jsonRPCObject: jsonRPCObject)
-                
-                // Change ownership of this device from the previously active client
-                // if that client previously had ownership of this device.
-                guard let clientDevice = Maraca.shared.previousActiveClient?.getClientDevice(for: captureHelperDevice) else {
-                    return
-                }
-                
-                Maraca.shared.previousActiveClient?.changeOwnership(forClientDeviceWith: clientDevice.handle, isOwned: false)
-            }
-        } else {
-            // The web page is attempting to open a CaptureHelperDevice that
-            // is no longer connected.
-            // Reply to web page
+        func sendErrorForUnopenedDevice() {
             let errorResponseJsonRpc = Utility.constructErrorResponse(error: SKTResult.E_DEVICENOTOPEN,
                                                                      errorMessage: "There is no device with guid: \(deviceGUID) open at this time",
                                                                      handle: client.handle,
@@ -279,7 +254,34 @@ class JavascriptMessageInterpreter: NSObject {
             client.replyToWebpage(with: errorResponseJsonRpc)
         }
         
+        // Confirm that CaptureHelper has still opened the device
         
+        // First, combine all CaptureHelperDevices and CaptureHelperDeviceManagers
+        // into a single array
+        let deviceManagers = Maraca.shared.capture.getDeviceManagers()
+        let devices = Maraca.shared.capture.getDevices()
+        
+        let allCaptureDevices = deviceManagers + devices
+        
+        // Then filter through this combined array to find
+        // the device with this GUID
+        if let captureHelperDevice = allCaptureDevices.filter ({ $0.deviceInfo.guid == deviceGUID }).first {
+            
+            // Finally, open this device
+            client.open(captureHelperDevice: captureHelperDevice, jsonRPCObject: jsonRPCObject)
+            
+            // Change ownership of this device from the previously active client
+            // if that client previously had ownership of this device.
+            guard let clientDevice = Maraca.shared.previousActiveClient?.getClientDevice(for: captureHelperDevice) else {
+                sendErrorForUnopenedDevice()
+                return
+            }
+            
+            Maraca.shared.previousActiveClient?.changeOwnership(forClientDeviceWith: clientDevice.handle, isOwned: false)
+        
+        } else {
+            sendErrorForUnopenedDevice()
+        }
     }
     
     private func close(jsonRPCObject: JsonRPCObject, webview: WKWebView) {

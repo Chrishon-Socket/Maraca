@@ -69,5 +69,4 @@ internal class SKTCaptureLayer: NSObject, CaptureHelperAllDelegate {
     func didChangeButtonsState(_ buttonsState: SKTCaptureButtonsState, forDevice device: CaptureHelperDevice) {
         buttonsStateHandler?(buttonsState, device)
     }
-    
 }
