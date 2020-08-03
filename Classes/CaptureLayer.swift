@@ -30,8 +30,6 @@ internal class SKTCaptureLayer: NSObject, CaptureHelperAllDelegate {
     internal var batteryLevelChangeHandler: SKTCaptureBatteryLevelChangeHandler?
     internal var buttonsStateHandler: SKTCaptureButtonsStateHandler?
     
-    private static var deviceIdentifiersMap: [String: String] = [:]
-    
     override init() {
         super.init()
     }
@@ -49,15 +47,10 @@ internal class SKTCaptureLayer: NSObject, CaptureHelperAllDelegate {
     }
     
     func didNotifyArrivalForDevice(_ device: CaptureHelperDevice, withResult result: SKTResult) {
-        storePersistentUniqueIdentifier(for: device, completion: { [weak self] in
-            self?.deviceArrivalHandler?(device, result)
-        })
+        deviceArrivalHandler?(device, result)
     }
     
     func didNotifyRemovalForDevice(_ device: CaptureHelperDevice, withResult result: SKTResult) {
-        if let deviceGuid = device.deviceInfo.guid {
-            SKTCaptureLayer.deviceIdentifiersMap.removeValue(forKey: deviceGuid)
-        }
         deviceRemovalHandler?(device, result)
     }
     
@@ -76,32 +69,4 @@ internal class SKTCaptureLayer: NSObject, CaptureHelperAllDelegate {
     func didChangeButtonsState(_ buttonsState: SKTCaptureButtonsState, forDevice device: CaptureHelperDevice) {
         buttonsStateHandler?(buttonsState, device)
     }
-    
-    private func storePersistentUniqueIdentifier(for captureHelperDevice: CaptureHelperDevice, completion: (() -> ())?) {
-        
-        guard let deviceManager = Maraca.shared.capture.getDeviceManagers().first else {
-            completion?()
-            return
-        }
-        
-        // Get guid from current device and the unique identifier
-        if let deviceGuid = captureHelperDevice.deviceInfo.guid {
-            
-            deviceManager.getDeviceUniqueIdentifierFromDeviceGuid(deviceGuid, withCompletionHandler: { (result, deviceUniqueId) in
-                if result != SKTResult.E_NOERROR {
-                    DebugLogger.shared.addDebugMessage("\(String(describing: type(of: self))) - \nError getting device unique identifier. Result: \(result.rawValue)\n")
-                    completion?()
-                    return
-                }
-                
-                SKTCaptureLayer.deviceIdentifiersMap[deviceGuid] = deviceUniqueId
-                completion?()
-            })
-        }
-    }
-    
-    public static func getPersistentUniqueIdentifier(forDeviceGUID deviceGuid: String) -> String? {
-        return SKTCaptureLayer.deviceIdentifiersMap[deviceGuid]
-    }
-    
 }
