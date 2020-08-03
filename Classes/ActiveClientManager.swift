@@ -41,94 +41,109 @@ class ActiveClientManager: NSObject {
         let captureLayer = SKTCaptureLayer()
         
         captureLayer.errorEventHandler = { [weak self] (error) in
-            self?.sendJSONForError(error: error)
+            guard let activeClient = Maraca.shared.activeClient else { return }
+            self?.sendJSONForError(client: activeClient, error: error)
         }
         captureLayer.deviceManagerArrivalHandler = { [weak self] (deviceManager, result) in
-            self?.sendJSONForDevicePresence(device: deviceManager,
-                                            result: result,
-                                            deviceTypeID: SKTCaptureEventID.deviceManagerArrival)
+            Array(Maraca.shared.clientsList.values).forEach { (client) in
+                self?.sendJSONForDevicePresence(client: client,
+                                                device: deviceManager,
+                                                result: result,
+                                                deviceTypeID: SKTCaptureEventID.deviceManagerArrival)
+            }
         }
         captureLayer.deviceManagerRemovalHandler = { [weak self] (deviceManager, result) in
-            self?.sendJSONForDevicePresence(device: deviceManager,
-                                            result: result,
-                                            deviceTypeID: SKTCaptureEventID.deviceManagerRemoval)
+            Array(Maraca.shared.clientsList.values).forEach { (client) in
+                self?.sendJSONForDevicePresence(client: client,
+                                                device: deviceManager,
+                                                result: result,
+                                                deviceTypeID: SKTCaptureEventID.deviceManagerRemoval)
+            }
         }
         captureLayer.deviceArrivalHandler = { [weak self] (device, result) in
             guard let strongSelf = self else { return }
             strongSelf.delegate?.activeClient?(strongSelf, didNotifyArrivalFor: device, result: result)
             
-            strongSelf.sendJSONForDevicePresence(device: device,
-                                                 result: result,
-                                                 deviceTypeID: SKTCaptureEventID.deviceArrival)
+            Array(Maraca.shared.clientsList.values).forEach { (client) in
+                strongSelf.sendJSONForDevicePresence(client: client,
+                                                     device: device,
+                                                     result: result,
+                                                     deviceTypeID: SKTCaptureEventID.deviceArrival)
+            }
         }
         captureLayer.deviceRemovalHandler = { [weak self] (device, result) in
             guard let strongSelf = self else { return }
             strongSelf.delegate?.activeClient?(strongSelf, didNotifyRemovalFor: device, result: result)
             
-            strongSelf.sendJSONForDevicePresence(device: device,
-                                                 result: result,
-                                                 deviceTypeID: SKTCaptureEventID.deviceRemoval)
+            Array(Maraca.shared.clientsList.values).forEach { (client) in
+                strongSelf.sendJSONForDevicePresence(client: client,
+                                                     device: device,
+                                                     result: result,
+                                                     deviceTypeID: SKTCaptureEventID.deviceRemoval)
+            }
         }
         captureLayer.powerStateHandler = { [weak self] (powerState, device) in
-            self?.sendJSONForPowerState(powerState: powerState)
+            Array(Maraca.shared.clientsList.values).forEach { (client) in
+                self?.sendJSONForPowerState(client: client, powerState: powerState)
+            }
         }
         captureLayer.batteryLevelChangeHandler = { [weak self] (batteryLevel, device) in
             guard let strongSelf = self else { return }
             
             strongSelf.delegate?.activeClient?(strongSelf, batteryLevelDidChange: batteryLevel, for: device)
             
-            strongSelf.sendJSONForBatteryLevelChange(batteryLevel: batteryLevel)
+            Array(Maraca.shared.clientsList.values).forEach { (client) in
+                strongSelf.sendJSONForBatteryLevelChange(client: client, batteryLevel: batteryLevel)
+            }
+            
         }
         captureLayer.captureDataHandler = { [weak self] (decodedData, device, result) in
-            self?.sendJSONForDecodedData(decodedData: decodedData,
+            
+            guard let activeClient = Maraca.shared.activeClient else { return }
+            self?.sendJSONForDecodedData(client: activeClient,
+                                         decodedData: decodedData,
                                          device: device,
                                          result: result)
         }
         captureLayer.buttonsStateHandler = { [weak self] (buttonsState, device) in
-            self?.sendJSONForButtonsState(buttonsState: buttonsState, device: device)
+            guard let activeClient = Maraca.shared.activeClient else { return }
+            self?.sendJSONForButtonsState(client: activeClient, buttonsState: buttonsState, device: device)
         }
         return captureLayer
     }
     
-    internal func resendDevicePresenceEvents() {
-        guard let activeClient = Maraca.shared.activeClient else {
-            return
-        }
-         
-        let currentlyOpenedClientDevices: [ClientDevice] = Array(activeClient.openedDevices.values)
-        let clientDeviceGuids: [String] = currentlyOpenedClientDevices.compactMap ({ $0.guid })
+    /// Resends device arrival JSON to newly activated client.
+    /// Purpose:
+    /// A newly activated client will not be aware of Capture Devices that
+    /// arrived before its activation.
+    /// This function notifies new Clients with the current list of devices
+    internal func resendDeviceArrivalEvents(for client: Client) {
          
         let currentlyOpenedCaptureDevices: [CaptureHelperDevice] = Maraca.shared.capture.getDevices() + Maraca.shared.capture.getDeviceManagers()
-        let captureHelperDeviceGuids: [String] = currentlyOpenedCaptureDevices.compactMap ({ $0.deviceInfo.guid })
         
-        
-        // Find all CaptureHelperDevices that have been removed while this Client
-        // was suspended
-        let expiredClientDevices: [ClientDevice] = currentlyOpenedClientDevices.filter { (clientDevice) -> Bool in
-            guard let clientDeviceGuid = clientDevice.guid else {
-                return false
-            }
-            return captureHelperDeviceGuids.contains(clientDeviceGuid) == false
-        }
-         
-        // Find all new CaptureHelperDevices that have arrived while this Client
-        // was suspended
+        // Find all CaptureHelperDevices that have arrived
+        // before this Client was activated
         let uncaughtOpenedCaptureDevices: [CaptureHelperDevice] = currentlyOpenedCaptureDevices.filter { (captureHelperDevice) -> Bool in
             guard let captureHelperDeviceGuid = captureHelperDevice.deviceInfo.guid else {
                 return false
             }
-            return clientDeviceGuids.contains(captureHelperDeviceGuid) == false
+            if client.didSendJsonForDevice(withGuid: captureHelperDeviceGuid) {
+                // Client has already received JSON for this device,
+                // but has not opened the device.
+                // Prevent sending duplicate JSON
+                return false
+            }
+            return true
         }
          
-        // send JSON for these device arrival/removal events
-        sendDeviceArrivalEvents(for: uncaughtOpenedCaptureDevices)
-        sendDeviceRemovalEvents(for: expiredClientDevices)
+        // send JSON for these device arrival events
+        sendDeviceArrivalEvents(for: client, uncaughtOpenedCaptureDevices: uncaughtOpenedCaptureDevices)
         
         // Re-assume ownership of the existing opened devices
-        activeClient.resume()
+        client.resume()
     }
     
-    private func sendDeviceArrivalEvents(for uncaughtOpenedCaptureDevices: [CaptureHelperDevice]) {
+    private func sendDeviceArrivalEvents(for client: Client, uncaughtOpenedCaptureDevices: [CaptureHelperDevice]) {
         guard uncaughtOpenedCaptureDevices.isEmpty == false else {
             return
         }
@@ -141,22 +156,8 @@ class ActiveClientManager: NSObject {
                 deviceTypeId = .deviceManagerArrival
             }
             
-            sendJSONForDevicePresence(device: device, result: SKTResult.E_NOERROR, deviceTypeID: deviceTypeId)
-        }
-    }
-    
-    private func sendDeviceRemovalEvents(for expiredClientDevices: [ClientDevice]) {
-        guard expiredClientDevices.isEmpty == false else {
-            return
-        }
-        expiredClientDevices.forEach { (clientDevice) in
-            var deviceTypeId: SKTCaptureEventID = .deviceRemoval
-            
-            if clientDevice.captureHelperDevice is CaptureHelperDeviceManager {
-                deviceTypeId = .deviceManagerRemoval
-            }
-            
-            sendJSONForDevicePresence(device: clientDevice.captureHelperDevice,
+            sendJSONForDevicePresence(client: client,
+                                      device: device,
                                       result: SKTResult.E_NOERROR,
                                       deviceTypeID: deviceTypeId)
         }
@@ -177,22 +178,18 @@ class ActiveClientManager: NSObject {
 
 extension ActiveClientManager {
     
-    internal func sendJSONForError(error: SKTResult) {
-        guard let activeClient = Maraca.shared.activeClient else { return }
+    internal func sendJSONForError(client: Client, error: SKTResult) {
         let errorResponseJsonRpc = Utility.constructErrorResponse(error: error,
                                                                  errorMessage: "",
-                                                                 handle: activeClient.handle,
+                                                                 handle: client.handle,
                                                                  responseId: nil)
         
-        activeClient.notifyWebpage(with: errorResponseJsonRpc)
+        client.notifyWebpage(with: errorResponseJsonRpc)
     }
     
-    internal func sendJSONForPowerState(powerState: SKTCapturePowerState) {
-        guard
-            let activeClient = Maraca.shared.activeClient,
-            let clientHandle = activeClient.handle
-            else {
-                return
+    internal func sendJSONForPowerState(client: Client, powerState: SKTCapturePowerState) {
+        guard let clientHandle = client.handle else {
+            return
         }
         
         let jsonRpc: JSONDictionary = [
@@ -207,15 +204,12 @@ extension ActiveClientManager {
             ]
         ]
         
-        activeClient.notifyWebpage(with: jsonRpc)
+        client.notifyWebpage(with: jsonRpc)
     }
     
-    internal func sendJSONForBatteryLevelChange(batteryLevel: Int) {
-        guard
-            let activeClient = Maraca.shared.activeClient,
-            let clientHandle = activeClient.handle
-            else {
-                return
+    internal func sendJSONForBatteryLevelChange(client: Client, batteryLevel: Int) {
+        guard let clientHandle = client.handle else {
+            return
         }
         
         let jsonRpc: JSONDictionary = [
@@ -230,16 +224,13 @@ extension ActiveClientManager {
             ]
         ]
         
-        activeClient.notifyWebpage(with: jsonRpc)
+        client.notifyWebpage(with: jsonRpc)
     }
     
-    internal func sendJSONForDevicePresence(device: CaptureHelperDevice, result: SKTResult, deviceTypeID: SKTCaptureEventID) {
+    internal func sendJSONForDevicePresence(client: Client, device: CaptureHelperDevice, result: SKTResult, deviceTypeID: SKTCaptureEventID) {
         
-        guard
-            let activeClient = Maraca.shared.activeClient,
-            let clientHandle = activeClient.handle
-            else {
-                return
+        guard let clientHandle = client.handle else {
+            return
         }
                       
         guard result == SKTResult.E_NOERROR else {
@@ -247,10 +238,10 @@ extension ActiveClientManager {
             let errorMessage = "There was an error with arrival or removal of the Socket Mobile device: \(String(describing: device.deviceInfo.name)). Error: \(result)"
             let errorResponseJsonRpc = Utility.constructErrorResponse(error: result,
                                                                      errorMessage: errorMessage,
-                                                                     handle: activeClient.handle,
+                                                                     handle: client.handle,
                                                                      responseId: nil)
           
-            activeClient.notifyWebpage(with: errorResponseJsonRpc)
+            client.notifyWebpage(with: errorResponseJsonRpc)
             return
         }
       
@@ -281,17 +272,16 @@ extension ActiveClientManager {
                 ]
             ]
         ]
+        
+        client.unopenedDevicePresenceEvents.insert(deviceGuid)
       
-        activeClient.notifyWebpage(with: jsonRpc)
+        client.notifyWebpage(with: jsonRpc)
     }
     
-    internal func sendJSONForDecodedData(decodedData: SKTCaptureDecodedData?, device: CaptureHelperDevice, result: SKTResult) {
+    internal func sendJSONForDecodedData(client: Client, decodedData: SKTCaptureDecodedData?, device: CaptureHelperDevice, result: SKTResult) {
         
-        guard
-            let activeClient = Maraca.shared.activeClient,
-            let clientHandle = activeClient.handle
-            else {
-                return
+        guard let clientHandle = client.handle else {
+            return
         }
        
         // E_CANCEL for case where Overlay view is cancelled
@@ -299,10 +289,10 @@ extension ActiveClientManager {
            
             let errorResponseJsonRpc = Utility.constructErrorResponse(error: result,
                                                                     errorMessage: "There was an error receiving decoded data from the Socket Mobile device: \(String(describing: device.deviceInfo.name)). Error: \(result)",
-                                                                    handle: activeClient.handle,
+                                                                    handle: client.handle,
                                                                     responseId: nil)
            
-            activeClient.notifyWebpage(with: errorResponseJsonRpc)
+            client.notifyWebpage(with: errorResponseJsonRpc)
             return
         }
        
@@ -318,7 +308,7 @@ extension ActiveClientManager {
         // Confirm that the ClientDevice has been previously opened
         // by the active client
        
-        guard activeClient.hasPreviouslyOpened(device: device) else {
+        guard client.hasPreviouslyOpened(device: device) else {
             return
         }
        
@@ -340,15 +330,12 @@ extension ActiveClientManager {
             ]
         ]
        
-        activeClient.notifyWebpage(with: jsonRpc)
+        client.notifyWebpage(with: jsonRpc)
     }
     
-    internal func sendJSONForButtonsState(buttonsState: SKTCaptureButtonsState, device: CaptureHelperDevice) {
-        guard
-            let activeClient = Maraca.shared.activeClient,
-            let clientHandle = activeClient.handle
-            else {
-                return
+    internal func sendJSONForButtonsState(client: Client, buttonsState: SKTCaptureButtonsState, device: CaptureHelperDevice) {
+        guard let clientHandle = client.handle else {
+            return
         }
         
         let jsonRpc: JSONDictionary = [
@@ -364,6 +351,6 @@ extension ActiveClientManager {
             ]
         ]
         
-        activeClient.notifyWebpage(with: jsonRpc)
+        client.notifyWebpage(with: jsonRpc)
     }
 }

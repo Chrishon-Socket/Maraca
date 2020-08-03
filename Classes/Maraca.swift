@@ -226,7 +226,10 @@ extension Maraca {
         // (i.e. resend device arrivals, etc.)
         
         if shouldResendDevicePresenceEvents {
-            activeClientManager.resendDevicePresenceEvents()
+            guard let activeClient = activeClient else {
+                return
+            }
+            activeClientManager.resendDeviceArrivalEvents(for: activeClient)
         }
         
     }
