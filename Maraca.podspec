@@ -8,7 +8,7 @@
 
 Pod::Spec.new do |s|
   s.name             = 'Maraca'
-  s.version          = '0.1.0'
+  s.version          = '1.0.0'
   s.summary          = 'Maraca bridges a web application with the SKTCapture cocoapod framework.'
   s.swift_version    = '5.0'
 
