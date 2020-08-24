@@ -26,6 +26,9 @@ public class Client: NSObject, ClientConformanceProtocol {
     
     internal private(set) var appInfo: SKTAppInfo?
     
+    /// The URL of the webpage that opened the client.
+    /// The Webview may navigate to other pages, but this client
+    /// may only send JSON to this web page.
     internal private(set) var webpageURLString: String?
     
     internal private(set) weak var webview: WKWebView?
@@ -36,15 +39,6 @@ public class Client: NSObject, ClientConformanceProtocol {
     
     required public override init() {
         super.init()
-    }
-    
-    // Keep track of device arrival events
-    // that have not been opened.
-    // Prevent sending duplicate JSON for device arrival events
-    internal var unopenedDevicePresenceEvents: Set<String> = Set<String>()
-    
-    internal func didSendJsonForDevice(withGuid deviceGuid: String) -> Bool {
-        return unopenedDevicePresenceEvents.contains(deviceGuid)
     }
 }
 
@@ -70,7 +64,7 @@ extension Client {
             return handle
         }
         
-        handle = Int(Date().timeIntervalSince1970)
+        self.handle = Utility.generateUniqueHandle()
         
         guard appInfo.verify(withBundleId: appInfo.appID) == true else {
             throw MaracaError.invalidAppInfo("The AppInfo parameters are invalid")
@@ -86,8 +80,15 @@ extension Client {
     }
     
     internal func open(captureHelperDevice: CaptureHelperDevice, jsonRPCObject: JsonRPCObject) {
-        let clientDevice = ClientDevice(captureHelperDevice: captureHelperDevice)
-        openedDevices[clientDevice.handle] = clientDevice
+        
+        var clientDevice: ClientDevice!
+        
+        if hasPreviouslyOpened(device: captureHelperDevice) {
+            clientDevice = getClientDevice(for: captureHelperDevice)
+        } else {
+            clientDevice = ClientDevice(captureHelperDevice: captureHelperDevice)
+            openedDevices[clientDevice.handle] = clientDevice
+        }
         
         let responseJsonRpc: JSONDictionary = [
             MaracaConstants.Keys.jsonrpc.rawValue:       jsonRPCObject.jsonrpc ?? Maraca.defaultJsonRpcVersion,
@@ -97,24 +98,13 @@ extension Client {
             ]
         ]
         
-        satisfyUnopened(device: captureHelperDevice)
-        
         replyToWebpage(with: responseJsonRpc)
         
         changeOwnership(forClientDeviceWith: clientDevice.handle, isOwned: true)
     }
     
-    private func satisfyUnopened(device: CaptureHelperDevice) {
-        // If this Client has previously received JSON
-        // for device arrival events but did NOT open
-        // the device,
-        // remove that deviceGuid from the list of unopened devices
-        if let deviceGuid = device.deviceInfo.guid, unopenedDevicePresenceEvents.contains(deviceGuid) {
-            unopenedDevicePresenceEvents.remove(deviceGuid)
-        }
-    }
-    
     internal func close(handle: ClientHandle, responseId: Int) {
+        
         if handle == self.handle {
             closeAllDevices()
         } else {
@@ -223,6 +213,14 @@ extension Client {
     
     private func sendJsonRpcToWebpage(jsonRpc: JSONDictionary, javascriptFunctionName: String) {
         
+        guard webview?.url?.absoluteString == webpageURLString else {
+            // Confirm that the WebView attached to this Client
+            // is displaying the web page that originally opened it.
+            // To prevent sending JSON to web applications that either
+            // do not use CaptureJS or did not open a Client
+            return
+        }
+        
         var javascript = javascriptFunctionName
         
         let jsonStringResult = Utility.convertJsonRpcToString(jsonRpc)
@@ -252,16 +250,7 @@ extension Client {
         }
         
         javascript.write("'); ")
-        
-        guard webview?.url?.absoluteString == webpageURLString else {
-            // Confirm that the current active client is still the
-            // one being used with the web page that is currently displayed
-            // in the WKWebView
-            // This should not happen since the active client is updated every
-            // time the WKWebView loads a new page, but just to be sure we catch any bugs...
-            fatalError("This client is attempting to send data to the wrong web page")
-        }
-        
+                
         webview?.evaluateJavaScript(javascript, completionHandler: { (object, error) in
             if let error = error {
                 DebugLogger.shared.addDebugMessage("\(String(describing: type(of: self))) - error evaluating javascript expression: \(javascript). Error: \(error)\n")
@@ -285,11 +274,72 @@ extension Client {
 
 extension Client: ClientReceiverProtocol {
     
-    internal func getProperty(property: SKTCaptureProperty, responseId: Int, completion: @escaping ClientReceiverCompletionHandler) {
-        Maraca.shared.capture.getProperty(property) { (result, property) in
+    internal func getProperty(with handle: ClientHandle, responseId: Int, property: SKTCaptureProperty) {
+        
+        if handle == self.handle {
+            DebugLogger.shared.addDebugMessage("\(String(describing: type(of: self))) - Getting property from capture")
             
-            guard result == .E_NOERROR else {
-                
+            getProperty(property: property, responseId: responseId) { (result) in
+                self.replyToWebpage(with: resultDictionary(result))
+            }
+            
+        } else if let _ = openedDevices[handle] {
+            DebugLogger.shared.addDebugMessage("\(String(describing: type(of: self))) - Getting property from capture helper device")
+            
+            openedDevices[handle]?.getProperty(property: property, responseId: responseId, completion: { (result) in
+                self.replyToWebpage(with: resultDictionary(result))
+            })
+            
+        } else {
+            
+            let errorMessage = "There is no client or device with the specified handle. The device may have been recently closed"
+            let errorResponseJsonRpc = Utility.constructErrorResponse(error: SKTResult.E_INVALIDHANDLE,
+                                                                     errorMessage: errorMessage,
+                                                                     handle: handle,
+                                                                     responseId: responseId)
+            DebugLogger.shared.addDebugMessage("\(String(describing: type(of: self))) - error response json rpc: \(errorResponseJsonRpc)")
+            
+            self.replyToWebpage(with: errorResponseJsonRpc)
+        }
+    }
+    
+    internal func setProperty(with handle: ClientHandle, responseId: Int, property: SKTCaptureProperty) {
+        
+        if handle == self.handle {
+            // TODO
+            // Will this affect other Clients?
+            // Each Client instance uses a single CaptureHelper
+            // shared instance
+            // So setting a property to a particular value might
+            // affect other Clients that don't want this.
+            setProperty(property: property, responseId: responseId) { (result) in
+                self.replyToWebpage(with: resultDictionary(result))
+            }
+        } else if let _ = openedDevices[handle] {
+            openedDevices[handle]?.setProperty(property: property, responseId: responseId, completion: { (result) in
+                self.replyToWebpage(with: resultDictionary(result))
+            })
+        } else {
+            let errorResponseJsonRpc = Utility.constructErrorResponse(error: SKTResult.E_INVALIDHANDLE,
+                                                                     errorMessage: "There is no client or device with the specified handle. The device may have been recently closed",
+                                                                     handle: handle,
+                                                                     responseId: responseId)
+            self.replyToWebpage(with: errorResponseJsonRpc)
+        }
+    }
+    
+    
+    
+    
+    
+    
+    
+    internal func getProperty(property: SKTCaptureProperty, responseId: Int, completion: @escaping ClientReceiverCompletionHandler) {
+        Maraca.shared.capture.getProperty(property) { (result, resultProperty) in
+            
+            guard result == SKTResult.E_NOERROR else {
+                print(property.id.rawValue)
+                print(property.type.rawValue)
                 let errorResponseJsonRpc = Utility.constructErrorResponse(error: result,
                                                                          errorMessage: "There was an error with getting property from Capture. Error: \(result)",
                                                                          handle: self.handle,
@@ -300,7 +350,7 @@ extension Client: ClientReceiverProtocol {
             }
             
             // Used a different name to differentiate between the three
-            guard let unwrappedProperty = property else {
+            guard let unwrappedProperty = resultProperty else {
                 // TODO
                 // Return with some kind of error response instead.
                 // But if the result != E_NOERROR, this will not be reached anyway.
@@ -351,60 +401,6 @@ extension Client: ClientReceiverProtocol {
             ]
             
             completion(.success(jsonRpc))
-        }
-    }
-    
-    
-    
-    
-    
-    
-    
-    
-    internal func getProperty(with handle: ClientHandle, responseId: Int, property: SKTCaptureProperty) {
-        
-        if handle == self.handle {
-            getProperty(property: property, responseId: responseId) { (result) in
-                self.replyToWebpage(with: resultDictionary(result))
-            }
-        } else if let _ = openedDevices[handle] {
-            openedDevices[handle]?.getProperty(property: property, responseId: responseId, completion: { (result) in
-                self.replyToWebpage(with: resultDictionary(result))
-            })
-        } else {
-            
-            let errorMessage = "There is no client or device with the specified handle. The device may have been recently closed"
-            let errorResponseJsonRpc = Utility.constructErrorResponse(error: SKTResult.E_INVALIDHANDLE,
-                                                                     errorMessage: errorMessage,
-                                                                     handle: handle,
-                                                                     responseId: responseId)
-            DebugLogger.shared.addDebugMessage("\(String(describing: type(of: self))) - error response json rpc: \(errorResponseJsonRpc)")
-            self.replyToWebpage(with: errorResponseJsonRpc)
-        }
-    }
-    
-    internal func setProperty(with handle: ClientHandle, responseId: Int, property: SKTCaptureProperty) {
-        
-        if handle == self.handle {
-            // TODO
-            // Will this affect other Clients?
-            // Each Client instance uses a single CaptureHelper
-            // shared instance
-            // So setting a property to a particular value might
-            // affect other Clients that don't want this.
-            setProperty(property: property, responseId: responseId) { (result) in
-                self.replyToWebpage(with: resultDictionary(result))
-            }
-        } else if let _ = openedDevices[handle] {
-            openedDevices[handle]?.setProperty(property: property, responseId: responseId, completion: { (result) in
-                self.replyToWebpage(with: resultDictionary(result))
-            })
-        } else {
-            let errorResponseJsonRpc = Utility.constructErrorResponse(error: SKTResult.E_INVALIDHANDLE,
-                                                                     errorMessage: "There is no client or device with the specified handle. The device may have been recently closed",
-                                                                     handle: handle,
-                                                                     responseId: responseId)
-            self.replyToWebpage(with: errorResponseJsonRpc)
         }
     }
 }
