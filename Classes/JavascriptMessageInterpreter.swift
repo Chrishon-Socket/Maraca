@@ -227,29 +227,32 @@ class JavascriptMessageInterpreter: NSObject {
             return
         }
         
+        let handle = verifiedJsonRpcObject.handle
+        let responseId = verifiedJsonRpcObject.responseId
+        
         guard let deviceGUID = jsonRPCObject.getParamsValue(for: MaracaConstants.Keys.guid.rawValue) as? String else {
             Utility.sendErrorResponse(withError: SKTResult.E_INVALIDPARAMETER,
                                      webView: webview,
-                                     handle: verifiedJsonRpcObject.handle,
-                                     responseId: verifiedJsonRpcObject.responseId)
+                                     handle: handle,
+                                     responseId: responseId)
             return
         }
         
         
         
-        guard let client = Maraca.shared.clientsList[verifiedJsonRpcObject.handle] else {
+        guard let client = Maraca.shared.getClient(for: handle) else {
             Utility.sendErrorResponse(withError: SKTResult.E_INVALIDHANDLE,
                                      webView: webview,
-                                     handle: verifiedJsonRpcObject.handle,
-                                     responseId: verifiedJsonRpcObject.responseId)
+                                     handle: handle,
+                                     responseId: responseId)
             return
         }
         
         func sendErrorForUnopenedDevice() {
             let errorResponseJsonRpc = Utility.constructErrorResponse(error: SKTResult.E_DEVICENOTOPEN,
                                                                      errorMessage: "There is no device with guid: \(deviceGUID) open at this time",
-                                                                     handle: client.handle,
-                                                                     responseId: verifiedJsonRpcObject.responseId)
+                                                                     handle: handle,
+                                                                     responseId: responseId)
             
             client.replyToWebpage(with: errorResponseJsonRpc)
         }
@@ -265,19 +268,20 @@ class JavascriptMessageInterpreter: NSObject {
         
         // Then filter through this combined array to find
         // the device with this GUID
-        if let captureHelperDevice = allCaptureDevices.filter ({ $0.deviceInfo.guid == deviceGUID }).first {
+        let filteredCaptureHelperDevices: [CaptureHelperDevice] = allCaptureDevices.filter ({ $0.deviceInfo.guid == deviceGUID })
+        
+        if let captureHelperDevice = filteredCaptureHelperDevices.first {
             
             // Finally, open this device
             client.open(captureHelperDevice: captureHelperDevice, jsonRPCObject: jsonRPCObject)
             
             // Change ownership of this device from the previously active client
             // if that client previously had ownership of this device.
-            guard let clientDevice = Maraca.shared.previousActiveClient?.getClientDevice(for: captureHelperDevice) else {
-                sendErrorForUnopenedDevice()
-                return
+            if let previousActiveClient = Maraca.shared.previousActiveClient {
+                if let clientDevice = previousActiveClient.getClientDevice(for: captureHelperDevice) {
+                    previousActiveClient.changeOwnership(forClientDeviceWith: clientDevice.handle, isOwned: false)
+                }
             }
-            
-            Maraca.shared.previousActiveClient?.changeOwnership(forClientDeviceWith: clientDevice.handle, isOwned: false)
         
         } else {
             sendErrorForUnopenedDevice()
@@ -290,14 +294,23 @@ class JavascriptMessageInterpreter: NSObject {
             return
         }
         
-        Maraca.shared.activeClient?.close(handle: verifiedJsonRpcObject.handle, responseId: verifiedJsonRpcObject.responseId)
+        let handle = verifiedJsonRpcObject.handle
+        let responseId = verifiedJsonRpcObject.responseId
         
         // If the handle is for a Client, call the delegate
         // and remove from the list of clients.
         // If the client with this handle is the `activeClient`,
         // set it to nil
-        if let client = Maraca.shared.clientsList[verifiedJsonRpcObject.handle] {
-            delegate?.interpreter(self, didClose: client, with: verifiedJsonRpcObject.handle)
+        if let client = Maraca.shared.getClient(for: handle) {
+            
+            client.close(responseId: responseId)
+            delegate?.interpreter(self, didClose: client, with: handle)
+            
+        } else if let (client, _) = Maraca.shared.getClientDevice(for: handle) {
+            
+            // Close the ClientDevice with matching handle
+            client.closeDevice(withHandle: handle, responseId: responseId)
+            
         }
     }
     
@@ -307,19 +320,28 @@ class JavascriptMessageInterpreter: NSObject {
             return
         }
         
+        let handle = verifiedJsonRpcObject.handle
+        let responseId = verifiedJsonRpcObject.responseId
+        
         let capturePropertyResult = Utility.constructSKTCaptureProperty(from: jsonRPCObject)
+        
         switch capturePropertyResult {
         case .success(let captureProperty):
-            Maraca.shared.activeClient?.getProperty(with: verifiedJsonRpcObject.handle,
-                                                    responseId: verifiedJsonRpcObject.responseId,
-                                                    property: captureProperty)
+            if let client = Maraca.shared.getClient(for: handle) {
+                
+                client.getProperty(with: handle, responseId: responseId, property: captureProperty)
+                
+            } else if let (client, _) = Maraca.shared.getClientDevice(for: handle) {
+                // Close the ClientDevice with matching handle
+                client.getProperty(with: handle, responseId: responseId, property: captureProperty)
+            }
             
         case .failure(_):
             // The values sent (property Id and property type) were invalid
             Utility.sendErrorResponse(withError: SKTResult.E_INVALIDPARAMETER,
                                      webView: webview,
                                      handle: nil,
-                                     responseId: verifiedJsonRpcObject.responseId)
+                                     responseId: responseId)
             return
         }
         
@@ -331,23 +353,36 @@ class JavascriptMessageInterpreter: NSObject {
             return
         }
         
+        let handle = verifiedJsonRpcObject.handle
+        let responseId = verifiedJsonRpcObject.responseId
+        
         guard
             let propertyFromJson = verifiedJsonRpcObject.getParamsValue(for: MaracaConstants.Keys.property.rawValue) as? [String : Any]
-        else {
+            else {
             // The values sent were invalid or nil
             Utility.sendErrorResponse(withError: SKTResult.E_INVALIDPARAMETER,
                                      webView: webview,
-                                     handle: nil,
-                                     responseId: verifiedJsonRpcObject.responseId)
+                                     handle: handle,
+                                     responseId: responseId)
             return
         }
         
+        var client: Client?
+        
+        if let clientMatchingHandle = Maraca.shared.getClient(for: handle) {
+            client = clientMatchingHandle
+            
+        } else if let (clientMatchingHandle, _) = Maraca.shared.getClientDevice(for: handle) {
+            client = clientMatchingHandle
+        }
+        
         let capturePropertyResult = Utility.constructSKTCaptureProperty(from: jsonRPCObject)
+        
         switch capturePropertyResult {
         case .success(let captureProperty):
             
             if let propertyValue = propertyFromJson[MaracaConstants.Keys.value.rawValue] {
-                do  {
+                do {
                     try captureProperty.setPropertyValue(using: propertyValue)
                 } catch let error {
                     
@@ -358,20 +393,18 @@ class JavascriptMessageInterpreter: NSObject {
                     // from the dictionary sent from the webpage
                     let errorResponseJsonRpc = Utility.constructErrorResponse(error: SKTResult.E_INVALIDPARAMETER,
                                                                              errorMessage: error.localizedDescription,
-                                                                             handle: Maraca.shared.activeClient?.handle,
-                                                                             responseId: verifiedJsonRpcObject.responseId)
+                                                                             handle: handle,
+                                                                             responseId: responseId)
                     
-                    Maraca.shared.activeClient?.replyToWebpage(with: errorResponseJsonRpc)
+                    client?.replyToWebpage(with: errorResponseJsonRpc)
                 }
             }
             
-            Maraca.shared.activeClient?.setProperty(with: verifiedJsonRpcObject.handle,
-                                                    responseId: verifiedJsonRpcObject.responseId,
-                                                    property: captureProperty)
+            client?.setProperty(with: handle, responseId: responseId, property: captureProperty)
             
         case .failure(let error):
             let errorJSONDictionary = Utility.constructErrorResponse(error: error)
-            Maraca.shared.activeClient?.replyToWebpage(with: errorJSONDictionary)
+            client?.replyToWebpage(with: errorJSONDictionary)
         }
     }
     

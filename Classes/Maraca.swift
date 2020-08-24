@@ -229,9 +229,6 @@ extension Maraca {
     }
     
     public func closeAndDeleteClient(_ client: Client) {
-        // If the client has opened a device, close the device(s). Otherwise, do nothing
-        client.closeAllDevices()
-        
         if activeClient == client {
             activeClient = nil
         }

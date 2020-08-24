@@ -103,13 +103,8 @@ extension Client {
         changeOwnership(forClientDeviceWith: clientDevice.handle, isOwned: true)
     }
     
-    internal func close(handle: ClientHandle, responseId: Int) {
-        
-        if handle == self.handle {
-            closeAllDevices()
-        } else {
-            closeDevice(with: handle, responseId: responseId)
-        }
+    internal func close(responseId: Int) {
+        openedDevices.removeAll()
         
         let responseJsonRpc: [String:  Any] = [
             MaracaConstants.Keys.jsonrpc.rawValue: Maraca.jsonRpcVersion ?? Maraca.defaultJsonRpcVersion,
@@ -120,11 +115,7 @@ extension Client {
         replyToWebpage(with: responseJsonRpc)
     }
     
-    internal func closeAllDevices() {
-        openedDevices.removeAll()
-    }
-    
-    private func closeDevice(with handle: ClientDeviceHandle, responseId: Int) {
+    internal func closeDevice(withHandle handle: ClientDeviceHandle, responseId: Int) {
         guard let _ = openedDevices[handle] else {
             guard let webview = webview else {
                 // The webview should not be nil
@@ -138,6 +129,14 @@ extension Client {
         }
             
         openedDevices.removeValue(forKey: handle)
+        
+        let responseJsonRpc: [String:  Any] = [
+            MaracaConstants.Keys.jsonrpc.rawValue: Maraca.jsonRpcVersion ?? Maraca.defaultJsonRpcVersion,
+            MaracaConstants.Keys.id.rawValue: responseId,
+            MaracaConstants.Keys.result.rawValue: 0
+        ]
+        
+        replyToWebpage(with: responseJsonRpc)
     }
     
     internal func changeOwnership(forClientDeviceWith handle: ClientDeviceHandle, isOwned: Bool) {
