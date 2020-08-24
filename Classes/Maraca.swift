@@ -200,37 +200,17 @@ extension Maraca {
             return
         }
         
-        // This prevents sending duplicate device presence events
-        // for the first Client opened in the App session, and resends all device presence events
-        // for new Clients
-        // Reason:
-        // Assuming Capture Delegate `capture.pushDelegate(...)`
-        // will send all device presence events if it was not previously
-        // "assumed" (i.e. when the first Client object is opened)
-        // This causes duplica
-        var shouldResendDevicePresenceEvents: Bool = true
-        
-        if previousActiveClient == nil {
-            shouldResendDevicePresenceEvents = false
-        }
-        
         previousActiveClient = activeClient
         activeClient?.suspend()
         activeClient = Array(clientsList.values)[selectedClientIndex]
         
         assumeCaptureDelegate()
         
-        // If there was an active client previously, and this previous client
-        // is not the one that will be activated, then the resume() function
-        // should be called, which is expected to resume all CaptureJS functions
-        // (i.e. resend device arrivals, etc.)
-        
-        if shouldResendDevicePresenceEvents {
-            guard let activeClient = activeClient else {
-                return
-            }
-            activeClientManager.resendDeviceArrivalEvents(for: activeClient)
+        guard let activeClient = activeClient else {
+            return
         }
+        
+        activeClientManager.resendDeviceArrivalEvents(for: activeClient)
         
     }
     
@@ -292,6 +272,20 @@ extension Maraca {
         return (Array(clientsList.values).filter { (client) -> Bool in
             return client.webview == webView
         })
+    }
+    
+    internal func getClient(for handle: ClientHandle) -> Client? {
+        return Maraca.shared.clientsList[handle]
+    }
+    
+    internal func getClientDevice(for handle: ClientDeviceHandle) -> (Client, ClientDevice)? {
+        // Returns a ClientDevice with the matching handle, and the Client that has opened it
+        for (_, client) in Maraca.shared.clientsList {
+            if let clientDevice = client.openedDevices[handle] {
+                return (client, clientDevice)
+            }
+        }
+        return nil
     }
 }
 
