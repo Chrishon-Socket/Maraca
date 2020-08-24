@@ -10,6 +10,14 @@ import WebKit.WKWebView
 
 class Utility {
     
+    internal static func generateUniqueHandle() -> Int {
+        let timeInterval: TimeInterval = Date().timeIntervalSince1970
+        let timeIntervalWithFloatingValue: Double = timeInterval * 1000.0
+        let uniqueValue: Int = Int(timeIntervalWithFloatingValue) + Maraca.shared.clientsList.count
+        
+        return uniqueValue
+    }
+    
     internal static func convertToDictionary(text: String) -> Result<JSONDictionary, Error> {
         if let data = text.data(using: .utf8) {
             do {
