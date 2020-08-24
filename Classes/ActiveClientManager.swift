@@ -120,35 +120,9 @@ class ActiveClientManager: NSObject {
     internal func resendDeviceArrivalEvents(for client: Client) {
          
         let currentlyOpenedCaptureDevices: [CaptureHelperDevice] = Maraca.shared.capture.getDevices() + Maraca.shared.capture.getDeviceManagers()
-        
-        // Find all CaptureHelperDevices that have arrived
-        // before this Client was activated
-        let uncaughtOpenedCaptureDevices: [CaptureHelperDevice] = currentlyOpenedCaptureDevices.filter { (captureHelperDevice) -> Bool in
-            guard let captureHelperDeviceGuid = captureHelperDevice.deviceInfo.guid else {
-                return false
-            }
-            if client.didSendJsonForDevice(withGuid: captureHelperDeviceGuid) {
-                // Client has already received JSON for this device,
-                // but has not opened the device.
-                // Prevent sending duplicate JSON
-                return false
-            }
-            return true
-        }
          
         // send JSON for these device arrival events
-        sendDeviceArrivalEvents(for: client, uncaughtOpenedCaptureDevices: uncaughtOpenedCaptureDevices)
-        
-        // Re-assume ownership of the existing opened devices
-        client.resume()
-    }
-    
-    private func sendDeviceArrivalEvents(for client: Client, uncaughtOpenedCaptureDevices: [CaptureHelperDevice]) {
-        guard uncaughtOpenedCaptureDevices.isEmpty == false else {
-            return
-        }
-        
-        uncaughtOpenedCaptureDevices.forEach { (device) in
+        currentlyOpenedCaptureDevices.forEach { (device) in
             
             var deviceTypeId: SKTCaptureEventID = .deviceArrival
             
@@ -161,6 +135,9 @@ class ActiveClientManager: NSObject {
                                       result: SKTResult.E_NOERROR,
                                       deviceTypeID: deviceTypeId)
         }
+        
+        // Re-assume ownership of the existing opened devices
+        client.resume()
     }
 }
 
@@ -272,8 +249,6 @@ extension ActiveClientManager {
                 ]
             ]
         ]
-        
-        client.unopenedDevicePresenceEvents.insert(deviceGuid)
       
         client.notifyWebpage(with: jsonRpc)
     }
