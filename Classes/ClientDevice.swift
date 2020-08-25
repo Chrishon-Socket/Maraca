@@ -15,13 +15,18 @@ import SKTCapture
 // maintains references to which CaptureHelperDevices have
 // been opened by which Client objects
 
-internal struct ClientDevice: ClientReceiverProtocol, Equatable {
+internal struct ClientDevice: ClientReceiverProtocol, Equatable, CustomStringConvertible {
     
     static func ==(lhs: ClientDevice, rhs: ClientDevice) -> Bool {
         return lhs.guid == rhs.guid || lhs.handle == rhs.handle
     }
     
     // MARK: - Variables
+    
+    var description: String {
+        let printableDescription: String = "Device name: \(String(describing: captureHelperDevice.deviceInfo.name)). GUID: \(String(describing: captureHelperDevice.deviceInfo.guid)). Handle: \(handle)"
+        return printableDescription
+    }
     
     /// Wrapper for bluetooth device
     internal let captureHelperDevice: CaptureHelperDevice
@@ -40,7 +45,7 @@ internal struct ClientDevice: ClientReceiverProtocol, Equatable {
     
     init(captureHelperDevice: CaptureHelperDevice) {
         self.captureHelperDevice = captureHelperDevice
-        self.handle = Int(Date().timeIntervalSince1970)
+        self.handle = Utility.generateUniqueHandle()
     }
     
     
@@ -52,10 +57,9 @@ internal struct ClientDevice: ClientReceiverProtocol, Equatable {
     // MARK: - Functions
     
     internal func getProperty(property: SKTCaptureProperty, responseId: Int, completion: @escaping ClientReceiverCompletionHandler) {
-        captureHelperDevice.getProperty(property) { (result, property) in
+        captureHelperDevice.getProperty(property) { (result, resultProperty) in
             
-            guard result == .E_NOERROR else {
-                
+            guard result == SKTResult.E_NOERROR else {
                 let errorMessage = "There was an error with getting property from the CaptureHelperDevice. Error: \(result)"
                 let errorResponseJsonRpc = Utility.constructErrorResponse(error: result,
                                                                          errorMessage: errorMessage,
@@ -66,7 +70,7 @@ internal struct ClientDevice: ClientReceiverProtocol, Equatable {
             }
             
             // Used a different name to differentiate between the three
-            guard let unwrappedProperty = property else {
+            guard let unwrappedProperty = resultProperty else {
                 // TODO
                 // Return with some kind of error response instead.
                 // But if the result != E_NOERROR, this will not be reached anyway.

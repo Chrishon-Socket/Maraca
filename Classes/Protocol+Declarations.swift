@@ -635,16 +635,19 @@ internal protocol ClientConformanceProtocol where Self: Client {
     func open(captureHelperDevice: CaptureHelperDevice, jsonRPCObject: JsonRPCObject)
     
     /**
-     Closes a Client object with the maching unique identifier and returns a response to the web application
+     Closes the Client and all of its currently opened devices, then returns a response to the web application
      
      - Parameters:
-        - handle: The unique identifier of the Client
         - responseId: Response unique identifier interpreted by web application using CaptureJS
      */
-    func close(handle: ClientHandle, responseId: Int)
+    func close(responseId: Int)
     
-    /// Closes all currently opened devices
-    func closeAllDevices()
+    /** Closes an opened ClientDevice with a matching handle, then returns a response to the web application
+    - Parameters:
+       - handle: The unique identifier for the bluetooth device
+       - responseId: Response unique identifier interpreted by web application using CaptureJS
+    */
+    func closeDevice(withHandle handle: ClientDeviceHandle, responseId: Int)
     
     /**
      Relinquishes or assumes ownership for a bluetooth device
