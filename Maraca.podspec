@@ -30,8 +30,10 @@ WKWebView with SKTCapture
   s.source           = { :git => 'https://github.com/SocketMobile/Maraca.git', :tag => s.version.to_s }
   # s.social_media_url = 'https://twitter.com/<TWITTER_USERNAME>'
 
-  s.ios.deployment_target = '9.3'
-  s.platform = :ios, "9.3"
+  s.ios.deployment_target = '10.0'
+  s.platform = :ios, "10.0"
+  
+  s.static_framework = true
 
   s.source_files = 'Classes/*.{h,m,swift}'
   
