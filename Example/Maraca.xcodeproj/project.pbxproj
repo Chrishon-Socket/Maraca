@@ -7,7 +7,7 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
-		4E656E83A50259F4744F51D5 /* Pods_Maraca_Tests.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = CB46DE2A659668C8D0D73B44 /* Pods_Maraca_Tests.framework */; };
+		50157C2CB0C277097287EFC6 /* Pods_Maraca_Example.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 88F31244B79A80E227C9CDD9 /* Pods_Maraca_Example.framework */; };
 		5201583924D1FCF8008899C8 /* TabsSelectionView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5201583824D1FCF8008899C8 /* TabsSelectionView.swift */; };
 		5201583B24D1FD20008899C8 /* TabCell.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5201583A24D1FD20008899C8 /* TabCell.swift */; };
 		5201583D24D1FD41008899C8 /* TabsStackView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5201583C24D1FD40008899C8 /* TabsStackView.swift */; };
@@ -18,7 +18,7 @@
 		607FACDD1AFB9204008FA782 /* Images.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 607FACDC1AFB9204008FA782 /* Images.xcassets */; };
 		607FACE01AFB9204008FA782 /* LaunchScreen.xib in Resources */ = {isa = PBXBuildFile; fileRef = 607FACDE1AFB9204008FA782 /* LaunchScreen.xib */; };
 		607FACEC1AFB9204008FA782 /* Tests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 607FACEB1AFB9204008FA782 /* Tests.swift */; };
-		E7C85BFD99DB8D555EF8E03C /* Pods_Maraca_Example.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 1EEC7438EE1397D498E9917B /* Pods_Maraca_Example.framework */; };
+		98DB5F4D05F104B8EEB22C9C /* Pods_Maraca_Tests.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 34B6CEDD0D1C077B3CEF4372 /* Pods_Maraca_Tests.framework */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -33,13 +33,14 @@
 
 /* Begin PBXFileReference section */
 		01D9B65D92E19CAEFC66CE9E /* README.md */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = net.daringfireball.markdown; name = README.md; path = ../README.md; sourceTree = "<group>"; };
-		1EEC7438EE1397D498E9917B /* Pods_Maraca_Example.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = Pods_Maraca_Example.framework; sourceTree = BUILT_PRODUCTS_DIR; };
+		0762D5CA99FF18CC12F56AA0 /* Pods-Maraca_Tests.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-Maraca_Tests.debug.xcconfig"; path = "Target Support Files/Pods-Maraca_Tests/Pods-Maraca_Tests.debug.xcconfig"; sourceTree = "<group>"; };
+		09E0806D654264F45CA80228 /* Pods-Maraca_Example.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-Maraca_Example.debug.xcconfig"; path = "Target Support Files/Pods-Maraca_Example/Pods-Maraca_Example.debug.xcconfig"; sourceTree = "<group>"; };
+		34B6CEDD0D1C077B3CEF4372 /* Pods_Maraca_Tests.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = Pods_Maraca_Tests.framework; sourceTree = BUILT_PRODUCTS_DIR; };
 		4B3A0884F4F2A723F7996679 /* LICENSE */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text; name = LICENSE; path = ../LICENSE; sourceTree = "<group>"; };
 		5201583824D1FCF8008899C8 /* TabsSelectionView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TabsSelectionView.swift; sourceTree = "<group>"; };
 		5201583A24D1FD20008899C8 /* TabCell.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TabCell.swift; sourceTree = "<group>"; };
 		5201583C24D1FD40008899C8 /* TabsStackView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TabsStackView.swift; sourceTree = "<group>"; };
 		5201583E24D1FD65008899C8 /* Tab.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Tab.swift; sourceTree = "<group>"; };
-		5C10146A866F873CD6AFE8E6 /* Pods-Maraca_Example.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-Maraca_Example.debug.xcconfig"; path = "Target Support Files/Pods-Maraca_Example/Pods-Maraca_Example.debug.xcconfig"; sourceTree = "<group>"; };
 		607FACD01AFB9204008FA782 /* Maraca_Example.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Maraca_Example.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		607FACD41AFB9204008FA782 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		607FACD51AFB9204008FA782 /* AppDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppDelegate.swift; sourceTree = "<group>"; };
@@ -50,11 +51,10 @@
 		607FACE51AFB9204008FA782 /* Maraca_Tests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = Maraca_Tests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		607FACEA1AFB9204008FA782 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		607FACEB1AFB9204008FA782 /* Tests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Tests.swift; sourceTree = "<group>"; };
-		81DD0982B92064FB997679C5 /* Pods-Maraca_Tests.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-Maraca_Tests.release.xcconfig"; path = "Target Support Files/Pods-Maraca_Tests/Pods-Maraca_Tests.release.xcconfig"; sourceTree = "<group>"; };
-		9D9E46E0C65F0E365C4D2965 /* Pods-Maraca_Example.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-Maraca_Example.release.xcconfig"; path = "Target Support Files/Pods-Maraca_Example/Pods-Maraca_Example.release.xcconfig"; sourceTree = "<group>"; };
-		CB46DE2A659668C8D0D73B44 /* Pods_Maraca_Tests.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = Pods_Maraca_Tests.framework; sourceTree = BUILT_PRODUCTS_DIR; };
+		7B481F30DD8A1E4E2D3FEDE0 /* Pods-Maraca_Tests.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-Maraca_Tests.release.xcconfig"; path = "Target Support Files/Pods-Maraca_Tests/Pods-Maraca_Tests.release.xcconfig"; sourceTree = "<group>"; };
+		88F31244B79A80E227C9CDD9 /* Pods_Maraca_Example.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = Pods_Maraca_Example.framework; sourceTree = BUILT_PRODUCTS_DIR; };
+		8CFAC5F43EF6145EDCABD5BA /* Pods-Maraca_Example.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-Maraca_Example.release.xcconfig"; path = "Target Support Files/Pods-Maraca_Example/Pods-Maraca_Example.release.xcconfig"; sourceTree = "<group>"; };
 		DDA783CC4C3190AFEF0CCCAE /* Maraca.podspec */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text; name = Maraca.podspec; path = ../Maraca.podspec; sourceTree = "<group>"; xcLanguageSpecificationIdentifier = xcode.lang.ruby; };
-		F866945E5E5CFB43E4A11118 /* Pods-Maraca_Tests.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-Maraca_Tests.debug.xcconfig"; path = "Target Support Files/Pods-Maraca_Tests/Pods-Maraca_Tests.debug.xcconfig"; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -62,7 +62,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				E7C85BFD99DB8D555EF8E03C /* Pods_Maraca_Example.framework in Frameworks */,
+				50157C2CB0C277097287EFC6 /* Pods_Maraca_Example.framework in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -70,22 +70,13 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				4E656E83A50259F4744F51D5 /* Pods_Maraca_Tests.framework in Frameworks */,
+				98DB5F4D05F104B8EEB22C9C /* Pods_Maraca_Tests.framework in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
-		4EAC135521987BE776999FF2 /* Frameworks */ = {
-			isa = PBXGroup;
-			children = (
-				1EEC7438EE1397D498E9917B /* Pods_Maraca_Example.framework */,
-				CB46DE2A659668C8D0D73B44 /* Pods_Maraca_Tests.framework */,
-			);
-			name = Frameworks;
-			sourceTree = "<group>";
-		};
 		5201583524D1FCAE008899C8 /* controllers */ = {
 			isa = PBXGroup;
 			children = (
@@ -115,10 +106,10 @@
 		52DFEDB5F85581EE110E1EEC /* Pods */ = {
 			isa = PBXGroup;
 			children = (
-				5C10146A866F873CD6AFE8E6 /* Pods-Maraca_Example.debug.xcconfig */,
-				9D9E46E0C65F0E365C4D2965 /* Pods-Maraca_Example.release.xcconfig */,
-				F866945E5E5CFB43E4A11118 /* Pods-Maraca_Tests.debug.xcconfig */,
-				81DD0982B92064FB997679C5 /* Pods-Maraca_Tests.release.xcconfig */,
+				09E0806D654264F45CA80228 /* Pods-Maraca_Example.debug.xcconfig */,
+				8CFAC5F43EF6145EDCABD5BA /* Pods-Maraca_Example.release.xcconfig */,
+				0762D5CA99FF18CC12F56AA0 /* Pods-Maraca_Tests.debug.xcconfig */,
+				7B481F30DD8A1E4E2D3FEDE0 /* Pods-Maraca_Tests.release.xcconfig */,
 			);
 			path = Pods;
 			sourceTree = "<group>";
@@ -131,7 +122,7 @@
 				607FACE81AFB9204008FA782 /* Tests */,
 				607FACD11AFB9204008FA782 /* Products */,
 				52DFEDB5F85581EE110E1EEC /* Pods */,
-				4EAC135521987BE776999FF2 /* Frameworks */,
+				8162ECBA3630C15363771212 /* Frameworks */,
 			);
 			sourceTree = "<group>";
 		};
@@ -195,6 +186,15 @@
 			name = "Podspec Metadata";
 			sourceTree = "<group>";
 		};
+		8162ECBA3630C15363771212 /* Frameworks */ = {
+			isa = PBXGroup;
+			children = (
+				88F31244B79A80E227C9CDD9 /* Pods_Maraca_Example.framework */,
+				34B6CEDD0D1C077B3CEF4372 /* Pods_Maraca_Tests.framework */,
+			);
+			name = Frameworks;
+			sourceTree = "<group>";
+		};
 /* End PBXGroup section */
 
 /* Begin PBXNativeTarget section */
@@ -202,11 +202,11 @@
 			isa = PBXNativeTarget;
 			buildConfigurationList = 607FACEF1AFB9204008FA782 /* Build configuration list for PBXNativeTarget "Maraca_Example" */;
 			buildPhases = (
-				5F848027439CA7CA5BD0812F /* [CP] Check Pods Manifest.lock */,
+				C17ABEDD3B4E1BE0064C1167 /* [CP] Check Pods Manifest.lock */,
 				607FACCC1AFB9204008FA782 /* Sources */,
 				607FACCD1AFB9204008FA782 /* Frameworks */,
 				607FACCE1AFB9204008FA782 /* Resources */,
-				CF68D2E50A371650319D284C /* [CP] Embed Pods Frameworks */,
+				C5AABEA476F6F3B45C115D32 /* [CP] Copy Pods Resources */,
 			);
 			buildRules = (
 			);
@@ -221,7 +221,7 @@
 			isa = PBXNativeTarget;
 			buildConfigurationList = 607FACF21AFB9204008FA782 /* Build configuration list for PBXNativeTarget "Maraca_Tests" */;
 			buildPhases = (
-				574581F5EA87915579C3E535 /* [CP] Check Pods Manifest.lock */,
+				D5001098FB8B9A208E816808 /* [CP] Check Pods Manifest.lock */,
 				607FACE11AFB9204008FA782 /* Sources */,
 				607FACE21AFB9204008FA782 /* Frameworks */,
 				607FACE31AFB9204008FA782 /* Resources */,
@@ -300,29 +300,7 @@
 /* End PBXResourcesBuildPhase section */
 
 /* Begin PBXShellScriptBuildPhase section */
-		574581F5EA87915579C3E535 /* [CP] Check Pods Manifest.lock */ = {
-			isa = PBXShellScriptBuildPhase;
-			buildActionMask = 2147483647;
-			files = (
-			);
-			inputFileListPaths = (
-			);
-			inputPaths = (
-				"${PODS_PODFILE_DIR_PATH}/Podfile.lock",
-				"${PODS_ROOT}/Manifest.lock",
-			);
-			name = "[CP] Check Pods Manifest.lock";
-			outputFileListPaths = (
-			);
-			outputPaths = (
-				"$(DERIVED_FILE_DIR)/Pods-Maraca_Tests-checkManifestLockResult.txt",
-			);
-			runOnlyForDeploymentPostprocessing = 0;
-			shellPath = /bin/sh;
-			shellScript = "diff \"${PODS_PODFILE_DIR_PATH}/Podfile.lock\" \"${PODS_ROOT}/Manifest.lock\" > /dev/null\nif [ $? != 0 ] ; then\n    # print error to STDERR\n    echo \"error: The sandbox is not in sync with the Podfile.lock. Run 'pod install' or update your CocoaPods installation.\" >&2\n    exit 1\nfi\n# This output is used by Xcode 'outputs' to avoid re-running this script phase.\necho \"SUCCESS\" > \"${SCRIPT_OUTPUT_FILE_0}\"\n";
-			showEnvVarsInLog = 0;
-		};
-		5F848027439CA7CA5BD0812F /* [CP] Check Pods Manifest.lock */ = {
+		C17ABEDD3B4E1BE0064C1167 /* [CP] Check Pods Manifest.lock */ = {
 			isa = PBXShellScriptBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
@@ -344,24 +322,46 @@
 			shellScript = "diff \"${PODS_PODFILE_DIR_PATH}/Podfile.lock\" \"${PODS_ROOT}/Manifest.lock\" > /dev/null\nif [ $? != 0 ] ; then\n    # print error to STDERR\n    echo \"error: The sandbox is not in sync with the Podfile.lock. Run 'pod install' or update your CocoaPods installation.\" >&2\n    exit 1\nfi\n# This output is used by Xcode 'outputs' to avoid re-running this script phase.\necho \"SUCCESS\" > \"${SCRIPT_OUTPUT_FILE_0}\"\n";
 			showEnvVarsInLog = 0;
 		};
-		CF68D2E50A371650319D284C /* [CP] Embed Pods Frameworks */ = {
+		C5AABEA476F6F3B45C115D32 /* [CP] Copy Pods Resources */ = {
 			isa = PBXShellScriptBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
 			);
 			inputPaths = (
-				"${PODS_ROOT}/Target Support Files/Pods-Maraca_Example/Pods-Maraca_Example-frameworks.sh",
-				"${BUILT_PRODUCTS_DIR}/Maraca/Maraca.framework",
-				"${BUILT_PRODUCTS_DIR}/SKTCapture/SKTCapture.framework",
+				"${PODS_ROOT}/Target Support Files/Pods-Maraca_Example/Pods-Maraca_Example-resources.sh",
+				"${PODS_ROOT}/SKTCapture/softScanBeep.wav",
+				"${PODS_ROOT}/SKTCapture/socketmobilepublickey.pem",
 			);
-			name = "[CP] Embed Pods Frameworks";
+			name = "[CP] Copy Pods Resources";
 			outputPaths = (
-				"${TARGET_BUILD_DIR}/${FRAMEWORKS_FOLDER_PATH}/Maraca.framework",
-				"${TARGET_BUILD_DIR}/${FRAMEWORKS_FOLDER_PATH}/SKTCapture.framework",
+				"${TARGET_BUILD_DIR}/${UNLOCALIZED_RESOURCES_FOLDER_PATH}/softScanBeep.wav",
+				"${TARGET_BUILD_DIR}/${UNLOCALIZED_RESOURCES_FOLDER_PATH}/socketmobilepublickey.pem",
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/sh;
-			shellScript = "\"${PODS_ROOT}/Target Support Files/Pods-Maraca_Example/Pods-Maraca_Example-frameworks.sh\"\n";
+			shellScript = "\"${PODS_ROOT}/Target Support Files/Pods-Maraca_Example/Pods-Maraca_Example-resources.sh\"\n";
+			showEnvVarsInLog = 0;
+		};
+		D5001098FB8B9A208E816808 /* [CP] Check Pods Manifest.lock */ = {
+			isa = PBXShellScriptBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			inputFileListPaths = (
+			);
+			inputPaths = (
+				"${PODS_PODFILE_DIR_PATH}/Podfile.lock",
+				"${PODS_ROOT}/Manifest.lock",
+			);
+			name = "[CP] Check Pods Manifest.lock";
+			outputFileListPaths = (
+			);
+			outputPaths = (
+				"$(DERIVED_FILE_DIR)/Pods-Maraca_Tests-checkManifestLockResult.txt",
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+			shellPath = /bin/sh;
+			shellScript = "diff \"${PODS_PODFILE_DIR_PATH}/Podfile.lock\" \"${PODS_ROOT}/Manifest.lock\" > /dev/null\nif [ $? != 0 ] ; then\n    # print error to STDERR\n    echo \"error: The sandbox is not in sync with the Podfile.lock. Run 'pod install' or update your CocoaPods installation.\" >&2\n    exit 1\nfi\n# This output is used by Xcode 'outputs' to avoid re-running this script phase.\necho \"SUCCESS\" > \"${SCRIPT_OUTPUT_FILE_0}\"\n";
 			showEnvVarsInLog = 0;
 		};
 /* End PBXShellScriptBuildPhase section */
@@ -463,7 +463,7 @@
 				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
 				GCC_WARN_UNUSED_FUNCTION = YES;
 				GCC_WARN_UNUSED_VARIABLE = YES;
-				IPHONEOS_DEPLOYMENT_TARGET = 9.3;
+				IPHONEOS_DEPLOYMENT_TARGET = 10.0;
 				MTL_ENABLE_DEBUG_INFO = YES;
 				ONLY_ACTIVE_ARCH = YES;
 				SDKROOT = iphoneos;
@@ -509,7 +509,7 @@
 				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
 				GCC_WARN_UNUSED_FUNCTION = YES;
 				GCC_WARN_UNUSED_VARIABLE = YES;
-				IPHONEOS_DEPLOYMENT_TARGET = 9.3;
+				IPHONEOS_DEPLOYMENT_TARGET = 10.0;
 				MTL_ENABLE_DEBUG_INFO = NO;
 				SDKROOT = iphoneos;
 				SWIFT_OPTIMIZATION_LEVEL = "-Owholemodule";
@@ -519,11 +519,12 @@
 		};
 		607FACF01AFB9204008FA782 /* Debug */ = {
 			isa = XCBuildConfiguration;
-			baseConfigurationReference = 5C10146A866F873CD6AFE8E6 /* Pods-Maraca_Example.debug.xcconfig */;
+			baseConfigurationReference = 09E0806D654264F45CA80228 /* Pods-Maraca_Example.debug.xcconfig */;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				DEVELOPMENT_TEAM = GCJ274LWEE;
 				INFOPLIST_FILE = Maraca/Info.plist;
+				IPHONEOS_DEPLOYMENT_TARGET = 10.0;
 				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/Frameworks";
 				MODULE_NAME = ExampleApp;
 				PRODUCT_BUNDLE_IDENTIFIER = "com.socketmobile.$(PRODUCT_NAME:rfc1034identifier)";
@@ -535,11 +536,12 @@
 		};
 		607FACF11AFB9204008FA782 /* Release */ = {
 			isa = XCBuildConfiguration;
-			baseConfigurationReference = 9D9E46E0C65F0E365C4D2965 /* Pods-Maraca_Example.release.xcconfig */;
+			baseConfigurationReference = 8CFAC5F43EF6145EDCABD5BA /* Pods-Maraca_Example.release.xcconfig */;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				DEVELOPMENT_TEAM = GCJ274LWEE;
 				INFOPLIST_FILE = Maraca/Info.plist;
+				IPHONEOS_DEPLOYMENT_TARGET = 10.0;
 				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/Frameworks";
 				MODULE_NAME = ExampleApp;
 				PRODUCT_BUNDLE_IDENTIFIER = "com.socketmobile.$(PRODUCT_NAME:rfc1034identifier)";
@@ -551,7 +553,7 @@
 		};
 		607FACF31AFB9204008FA782 /* Debug */ = {
 			isa = XCBuildConfiguration;
-			baseConfigurationReference = F866945E5E5CFB43E4A11118 /* Pods-Maraca_Tests.debug.xcconfig */;
+			baseConfigurationReference = 0762D5CA99FF18CC12F56AA0 /* Pods-Maraca_Tests.debug.xcconfig */;
 			buildSettings = {
 				DEVELOPMENT_TEAM = GCJ274LWEE;
 				FRAMEWORK_SEARCH_PATHS = (
@@ -574,7 +576,7 @@
 		};
 		607FACF41AFB9204008FA782 /* Release */ = {
 			isa = XCBuildConfiguration;
-			baseConfigurationReference = 81DD0982B92064FB997679C5 /* Pods-Maraca_Tests.release.xcconfig */;
+			baseConfigurationReference = 7B481F30DD8A1E4E2D3FEDE0 /* Pods-Maraca_Tests.release.xcconfig */;
 			buildSettings = {
 				DEVELOPMENT_TEAM = GCJ274LWEE;
 				FRAMEWORK_SEARCH_PATHS = (
