@@ -8,7 +8,7 @@
 
 Pod::Spec.new do |s|
   s.name             = 'Maraca'
-  s.version          = '1.0.0'
+  s.version          = '1.0.3'
   s.summary          = 'Maraca bridges a web application with the SKTCapture cocoapod framework.'
   s.swift_version    = '5.0'
 
@@ -37,11 +37,14 @@ WKWebView with SKTCapture
 
   s.source_files = 'Classes/*.{h,m,swift}'
   
+  s.pod_target_xcconfig = { 'ONLY_ACTIVE_ARCH' => 'YES' }
+  s.user_target_xcconfig = { 'ONLY_ACTIVE_ARCH' => 'YES' } # not recommended but required to pass lint validation
+  
   # s.resource_bundles = {
   #   'Maraca' => ['Maraca/Assets/*.png']
   # }
 
   # s.public_header_files = 'Pod/Classes/**/*.h'
   # s.frameworks = 'UIKit', 'MapKit'
-  s.dependency 'SKTCapture', '~>1.2'
+  s.dependency 'SKTCapture', '~>1.3'
 end
