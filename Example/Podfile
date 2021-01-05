@@ -3,7 +3,7 @@ platform :ios, '10.0'
 use_frameworks!
 
 target 'Maraca_Example' do
-  pod 'SKTCapture', '~>1.2'
+  pod 'SKTCapture', '~>1.3'
   pod 'Maraca', :path => '../'
 
   target 'Maraca_Tests' do
