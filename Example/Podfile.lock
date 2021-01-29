@@ -1,7 +1,7 @@
 PODS:
-  - Maraca (1.0.3):
+  - Maraca (1.0.5):
     - SKTCapture (~> 1.3)
-  - SKTCapture (1.3.28)
+  - SKTCapture (1.3.33)
 
 DEPENDENCIES:
   - Maraca (from `../`)
@@ -16,8 +16,8 @@ EXTERNAL SOURCES:
     :path: "../"
 
 SPEC CHECKSUMS:
-  Maraca: 9793e8e7581c4714aa02bc24965ad87fa98f14b1
-  SKTCapture: 0a0a122ff6abcb65f3c444829a0a6116de45536f
+  Maraca: f2b2c21b4a4e62dfe77e16ea2622e7bcfdd6c960
+  SKTCapture: e4d7ae70cbb72e574c5ee87699eccb70a241f409
 
 PODFILE CHECKSUM: 922530e340f4446a4ff2581fc9bdee2e77b600bc
 
