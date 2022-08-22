@@ -1,11 +1,10 @@
 # Maraca
 
-[![CI Status](https://img.shields.io/travis/Chrishon/Maraca.svg?style=flat)](https://travis-ci.org/Chrishon/Maraca)
 [![Version](https://img.shields.io/cocoapods/v/Maraca.svg?style=flat)](https://cocoapods.org/pods/Maraca)
 [![License](https://img.shields.io/cocoapods/l/Maraca.svg?style=flat)](https://cocoapods.org/pods/Maraca)
 [![Platform](https://img.shields.io/cocoapods/p/Maraca.svg?style=flat)](https://cocoapods.org/pods/Maraca)
 
-Maraca establishes connections between your iOS application using our [iOS Capture SDK](https://github.com/SocketMobile/cocoapods-capture) and a web application using our [CaptureJS SDK](https://docs.socketmobile.com/capturejs/en/latest/gettingStarted.html). This enables the web application to connect with our scanners and NFC readers with the same flexibilty that our iOS SDK provides.
+Maraca establishes connections between your iOS application using our [iOS CaptureSDK](https://github.com/SocketMobile/cocoapods-capturesdk) and a web application using our [CaptureJS SDK](https://docs.socketmobile.com/capturejs/en/latest/gettingStarted.html). This enables the web application to connect with our scanners and NFC readers with the same flexibilty that our iOS SDK provides.
 
 ## Usage
 
