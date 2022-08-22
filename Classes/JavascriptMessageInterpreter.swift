@@ -6,7 +6,7 @@
 //
 
 import WebKit
-import SKTCapture
+import CaptureSDK
 
 protocol JavascriptMessageInterpreterDelegate: class {
     func interpreter(_ interpreter: JavascriptMessageInterpreter, didReceiveJSONRPC version: String)
@@ -139,9 +139,9 @@ class JavascriptMessageInterpreter: NSObject {
         guard let appInfoDictionary = jsonRPCObject.getAppInfo() else { return }
         
         let appInfo = SKTAppInfo()
-        appInfo.appID = appInfoDictionary[MaracaConstants.Keys.appId.rawValue] as? String
-        appInfo.appKey = appInfoDictionary[MaracaConstants.Keys.appKey.rawValue] as? String
-        appInfo.developerID = appInfoDictionary[MaracaConstants.Keys.developerId.rawValue] as? String
+        appInfo.appID = appInfoDictionary[MaracaConstants.Keys.appId.rawValue] as? String ?? ""
+        appInfo.appKey = appInfoDictionary[MaracaConstants.Keys.appKey.rawValue] as? String ?? ""
+        appInfo.developerID = appInfoDictionary[MaracaConstants.Keys.developerId.rawValue] as? String ?? ""
         
         openNewClient(with: appInfo, webview: webview) { [weak self] (result) in
             

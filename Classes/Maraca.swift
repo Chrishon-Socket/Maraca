@@ -6,7 +6,7 @@
 //
 
 import Foundation
-import SKTCapture
+import CaptureSDK
 import WebKit.WKUserContentController
 
 public final class Maraca: NSObject {
