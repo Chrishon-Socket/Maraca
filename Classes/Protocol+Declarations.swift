@@ -6,7 +6,7 @@
 //
 
 import Foundation
-import SKTCapture
+import CaptureSDK
 import WebKit.WKScriptMessage
 // This file maintains all of the protocols, typealiases,
 // enums and utility structs used within Maraca

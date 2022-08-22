@@ -6,7 +6,7 @@
 //
 
 import Foundation
-import SKTCapture
+import CaptureSDK
 import WebKit.WKWebView
 
 public class Client: NSObject, ClientConformanceProtocol {

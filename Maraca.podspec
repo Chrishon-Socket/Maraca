@@ -8,8 +8,8 @@
 
 Pod::Spec.new do |s|
   s.name             = 'Maraca'
-  s.version          = '1.0.6'
-  s.summary          = 'Maraca bridges a web application with the SKTCapture cocoapod framework.'
+  s.version          = '1.0.7'
+  s.summary          = 'Maraca bridges a web application with the CaptureSDK cocoapods framework.'
   s.swift_version    = '5.0'
 
 # This description is used to generate tags and improve search results.
@@ -19,8 +19,7 @@ Pod::Spec.new do |s|
 #   * Finally, don't worry about the indent, CocoaPods strips it!
 
   s.description      = <<-DESC
-Use Socket Mobile barcode scanners and RFID readers and writers  with your web application by bridging iOS WKWebView with SKTCapture SDK
-WKWebView with SKTCapture
+Use Socket Mobile barcode scanners and RFID readers and writers with your web application by bridging iOS WKWebView with CaptureSDK
                        DESC
 
   s.homepage         = 'https://github.com/SocketMobile/Maraca'
@@ -30,8 +29,8 @@ WKWebView with SKTCapture
   s.source           = { :git => 'https://github.com/SocketMobile/Maraca.git', :tag => s.version.to_s }
   # s.social_media_url = 'https://twitter.com/<TWITTER_USERNAME>'
 
-  s.ios.deployment_target = '10.0'
-  s.platform = :ios, "10.0"
+  s.ios.deployment_target = '11.0'
+  s.platform = :ios, "11.0"
   
   s.static_framework = true
 
@@ -40,11 +39,5 @@ WKWebView with SKTCapture
   s.pod_target_xcconfig = { 'ONLY_ACTIVE_ARCH' => 'YES' }
   s.user_target_xcconfig = { 'ONLY_ACTIVE_ARCH' => 'YES' } # not recommended but required to pass lint validation
   
-  # s.resource_bundles = {
-  #   'Maraca' => ['Maraca/Assets/*.png']
-  # }
-
-  # s.public_header_files = 'Pod/Classes/**/*.h'
-  # s.frameworks = 'UIKit', 'MapKit'
-  s.dependency 'SKTCapture', '~>1.3'
+  s.dependency 'CaptureSDK', '~>1.5'
 end

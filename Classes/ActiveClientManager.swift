@@ -5,7 +5,7 @@
 //  Created by Chrishon Wyllie on 7/22/20.
 //
 
-import SKTCapture
+import CaptureSDK
 
 /// Manages relations between the currently active Client object and the web application it represents
 class ActiveClientManager: NSObject {

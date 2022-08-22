@@ -5,7 +5,7 @@
 //  Created by Chrishon Wyllie on 7/22/20.
 //
 
-import SKTCapture
+import CaptureSDK
 import WebKit.WKWebView
 
 class Utility {

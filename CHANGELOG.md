@@ -1,3 +1,7 @@
+## [Version 1.0.7](https://github.com/SocketMobile/Maraca/releases/tag/1.0.7)
+### New
+* Updated to support latest version of new CaptureSDK: version `1.5`
+
 ## [Version 1.0.6](https://github.com/SocketMobile/Maraca/releases/tag/1.0.6)
 ### New
 * Updated to support latest version of SKTCapture: version `1.3.33` (Fixes issue with restarting auto-discovery for nearby devices when the list of favorited devices has been updated)

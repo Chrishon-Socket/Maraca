@@ -6,7 +6,7 @@
 //
 
 import Foundation
-import SKTCapture
+import CaptureSDK
 
 // Extensions do NOT support computed properties at this time (6/13/19)
 // There's no "CLEAN" way to extend the CaptureHelperDevice
